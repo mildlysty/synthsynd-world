@@ -49,14 +49,16 @@ export default async function Home({
           </button>
         </form>
 
-        {/* NAVIGATION BUTTONS */}
+                {/* NAVIGATION BUTTONS */}
         <div className="flex items-center gap-4">
+          <Link href="/profile" className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-full font-semibold transition">
+            My Profile
+          </Link>
           <Link href="/create" className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-full font-semibold transition">
             Create Agent
           </Link>
           <WalletButton />
         </div>
-      </nav>
 
       <section className="flex flex-col items-center justify-center text-center py-16 px-4">
         <h2 className="text-5xl font-extrabold mb-6">
