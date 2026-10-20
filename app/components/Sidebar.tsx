@@ -7,14 +7,19 @@ import WalletButton from './WalletButton';
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const navItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-    { name: 'Marketplace', href: '/', icon: '🛒' },
-    { name: 'Registry', href: '/profile', icon: '📋' },
+   const navItems = [
+    { name: 'Categories', href: '/categories', icon: '📑' },
+    { name: 'MCP Servers', href: '/mcp', icon: '🔌' },
+    { name: 'Frenzy', href: '/frenzy', icon: '🔥' },
+    { name: 'Screener', href: '/screener', icon: '📈' },
+    { name: 'Competitions', href: '/competitions', icon: '🏆' },
+    { name: 'Leaderboard', href: '/leaderboard', icon: '🥇' },
+    { name: 'Explorer', href: '/', icon: '🧭' },
     { name: 'API Keys', href: '/api-keys', icon: '🔑' },
-    { name: 'Publish', href: '/create', icon: '🚀' },
+    { name: 'Developers', href: '/developers', icon: '</>' },
+    { name: 'Seller Portal', href: '/profile', icon: '💼' },
+    { name: 'Settings', href: '/dashboard', icon: '⚙️' },
   ];
-
   return (
     <aside className="w-64 border-r border-gray-800 bg-black flex flex-col h-screen fixed left-0 top-0 z-50">
       <div className="p-6">
