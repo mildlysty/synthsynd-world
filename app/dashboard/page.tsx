@@ -1,10 +1,10 @@
-import ProfileEditor from '../components/ProfileEditor';
 'use client';
 
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
 import Link from 'next/link';
+import ProfileEditor from '../components/ProfileEditor';
 
 export default function DashboardOverview() {
   const { publicKey } = useWallet();
@@ -46,6 +46,9 @@ export default function DashboardOverview() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8">Dashboard Overview</h1>
+      
+      {/* USERNAME EDITOR */}
+      <ProfileEditor />
       
       {/* STATS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
