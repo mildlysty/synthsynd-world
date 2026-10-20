@@ -1,10 +1,10 @@
 'use client';
 
+import ProfileEditor from '../components/ProfileEditor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabase';
 import Link from 'next/link';
-import ProfileEditor from '../components/ProfileEditor';
 
 export default function DashboardOverview() {
   const { publicKey } = useWallet();
