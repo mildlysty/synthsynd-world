@@ -34,6 +34,7 @@ export default function CreateAgent() {
         {
           id: crypto.randomUUID(), // Generates a random UUID
           name: formData.name,
+          statusType: 'agent',
           description: formData.description,
           image_url: formData.image_url || null,
           price_usd: formData.is_free ? 0 : formData.price_usd,
