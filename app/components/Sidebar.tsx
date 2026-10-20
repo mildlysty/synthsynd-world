@@ -1,0 +1,1 @@
+    { name: 'API Keys', href: '/api-keys', icon: '🔑' },
