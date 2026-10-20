@@ -1,3 +1,4 @@
+import ProfileEditor from '../components/ProfileEditor';
 'use client';
 
 import { useWallet } from '@solana/wallet-adapter-react';
