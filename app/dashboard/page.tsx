@@ -47,10 +47,8 @@ export default function DashboardOverview() {
     <div>
       <h1 className="text-3xl font-bold mb-8">Dashboard Overview</h1>
       
-      {/* USERNAME EDITOR */}
       <ProfileEditor />
       
-      {/* STATS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
           <h3 className="text-gray-400 text-sm mb-2">Total Agents</h3>
@@ -66,7 +64,6 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      {/* QUICK ACTIONS */}
       <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
       <div className="flex gap-4">
         <Link href="/create" className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl font-bold transition">
