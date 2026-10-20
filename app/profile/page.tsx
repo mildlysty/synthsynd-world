@@ -18,7 +18,6 @@ export default function ProfilePage() {
         return;
       }
 
-      // Fetch ONLY the agents created by this specific wallet address
       const { data, error } = await supabase
         .from('agents')
         .select('*')
@@ -33,6 +32,21 @@ export default function ProfilePage() {
 
     fetchMyAgents();
   }, [publicKey]);
+
+  // --- NEW DELETE FUNCTION ---
+  const handleDelete = async (id: string) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this agent? This cannot be undone.");
+    if (!confirmDelete) return;
+
+    const { error } = await supabase.from('agents').delete().eq('id', id);
+    
+    if (error) {
+      alert("Error deleting agent: " + error.message);
+    } else {
+      // Remove it from the screen instantly
+      setAgents(agents.filter((agent) => agent.id !== id));
+    }
+  };
 
   return (
     <main className="min-h-screen bg-black text-white font-sans">
@@ -80,13 +94,24 @@ export default function ProfilePage() {
                 </div>
                 <h3 className="text-xl font-bold mb-2 truncate">{agent.name}</h3>
                 <p className="text-gray-400 text-sm mb-4 line-clamp-2 flex-grow">{agent.description}</p>
+                
                 <div className="flex justify-between items-center mt-auto">
                   <span className="text-purple-400 font-bold">
                     {agent.is_free ? "FREE" : `${agent.price_usd || 0} $SSDY`}
                   </span>
-                  <Link href={`/agent/${agent.id}`} className="text-sm bg-gray-800 px-4 py-2 rounded-lg hover:bg-gray-700 transition">
-                    View
-                  </Link>
+                  
+                  {/* VIEW AND DELETE BUTTONS */}
+                  <div className="flex gap-2">
+                    <Link href={`/agent/${agent.id}`} className="text-sm bg-gray-800 px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                      View
+                    </Link>
+                    <button 
+                      onClick={() => handleDelete(agent.id)} 
+                      className="text-sm bg-red-900/50 text-red-400 px-4 py-2 rounded-lg hover:bg-red-800 hover:text-white transition"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
