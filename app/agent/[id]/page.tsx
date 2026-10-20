@@ -1,4 +1,4 @@
-import { supabase } from '../../utils/supabase';
+import { supabase } from '../../../utils/supabase';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import BuyButton from '../../components/BuyButton';
@@ -14,7 +14,6 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
 
   if (!agent) notFound();
 
-  // Calculate fake stats based on description length for the UI
   const descLength = agent.description?.length || 0;
   const wordCount = agent.description?.split(' ').length || 0;
   const tokenCount = Math.floor(wordCount * 1.3);
@@ -80,7 +79,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
               </div>
             </div>
 
-            {/* REVIEWS SECTION (We built this earlier) */}
+            {/* REVIEWS SECTION */}
             <div className="mt-12">
               <h2 className="text-2xl font-bold mb-4">Ratings</h2>
               <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center text-gray-500">
