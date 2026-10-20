@@ -5,11 +5,12 @@ import WalletButton from './components/WalletButton';
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; q?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; type?: string }>;
 }) {
   const resolvedParams = await searchParams;
   const currentPage = Number(resolvedParams.page) || 1;
   const searchQuery = resolvedParams.q || '';
+  const filterType = resolvedParams.type || 'all'; 
   const itemsPerPage = 12;
   
   const from = (currentPage - 1) * itemsPerPage;
@@ -17,8 +18,14 @@ export default async function Home({
 
   // Build the Supabase query
   let query = supabase.from('agents').select('*', { count: 'exact' }).order('created_at', { ascending: false });
+  
   if (searchQuery) {
     query = query.ilike('name', `%${searchQuery}%`);
+  }
+
+  // Apply the category filter
+  if (filterType !== 'all') {
+    query = query.eq('statusType', filterType);
   }
 
   const { data: agents, count, error } = await query.range(from, to);
@@ -70,6 +77,23 @@ export default async function Home({
         </p>
       </section>
 
+      {/* CATEGORY TABS */}
+      <section className="flex justify-center gap-4 mb-8">
+        {['all', 'agent', 'prompt', 'tool'].map((type) => (
+          <Link 
+            key={type}
+            href={`/?type=${type}${searchQuery ? `&q=${searchQuery}` : ''}`}
+            className={`px-6 py-2 rounded-full font-semibold transition capitalize ${
+              filterType === type 
+                ? 'bg-purple-600 text-white' 
+                : 'bg-gray-900 text-gray-400 hover:bg-gray-800'
+            }`}
+          >
+            {type === 'all' ? 'All Items' : type + 's'}
+          </Link>
+        ))}
+      </section>
+
       <section className="max-w-6xl mx-auto px-6 pb-10 grid grid-cols-1 md:grid-cols-3 gap-8">
         {agents && agents.length > 0 ? (
           agents.map((agent) => (
@@ -100,7 +124,7 @@ export default async function Home({
           ))
         ) : (
           <div className="col-span-3 text-center text-gray-500 py-10 text-xl">
-            No agents found for "{searchQuery}".
+            No items found for this category or search.
           </div>
         )}
       </section>
@@ -109,7 +133,7 @@ export default async function Home({
       <section className="flex justify-center items-center gap-4 pb-20">
         {currentPage > 1 && (
           <Link 
-            href={`/?page=${currentPage - 1}${searchQuery ? `&q=${searchQuery}` : ''}`}
+            href={`/?page=${currentPage - 1}${searchQuery ? `&q=${searchQuery}` : ''}${filterType !== 'all' ? `&type=${filterType}` : ''}`}
             className="bg-gray-800 px-6 py-2 rounded-lg hover:bg-gray-700 transition"
           >
             Previous
@@ -122,7 +146,7 @@ export default async function Home({
 
         {currentPage < totalPages && (
           <Link 
-            href={`/?page=${currentPage + 1}${searchQuery ? `&q=${searchQuery}` : ''}`}
+            href={`/?page=${currentPage + 1}${searchQuery ? `&q=${searchQuery}` : ''}${filterType !== 'all' ? `&type=${filterType}` : ''}`}
             className="bg-gray-800 px-6 py-2 rounded-lg hover:bg-gray-700 transition"
           >
             Next
