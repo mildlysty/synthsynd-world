@@ -58,8 +58,8 @@ export default async function Home({
 
         {/* NAVIGATION BUTTONS */}
         <div className="flex items-center gap-4">
-          <Link href="/profile" className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-full font-semibold transition">
-            My Profile
+          <Link href="/dashboard" className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-full font-semibold transition">
+            Dashboard
           </Link>
           <Link href="/create" className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-full font-semibold transition">
             Create Agent
