@@ -1,6 +1,7 @@
 import { supabase } from '../../../utils/supabase';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import Reviews from '../../components/Reviews';
 
 export default async function AgentPage({ params }: { params: Promise<{ id: string }> }) {
   // Await params for Next.js 15+ compatibility
@@ -55,6 +56,7 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
       </div>
+<Reviews agentId={agent.id} />
     </main>
   );
 }
