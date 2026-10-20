@@ -1,62 +1,50 @@
-import { supabase } from '../../../utils/supabase';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound } from "next/navigation";
+import { supabase } from "../../../utils/supabase";
+import MarketplaceCard, { type MarketplaceItem } from "../../components/MarketplaceCard";
 
 export default async function PublicProfile({ params }: { params: Promise<{ username: string }> }) {
-  const resolvedParams = await params;
-  const username = resolvedParams.username;
+  const { username } = await params;
+  const normalized = username.toLowerCase();
+  const { data: marketplaceProfile } = await supabase.from("marketplace_profiles")
+    .select("owner_id,username,display_name,bio,avatar_url,website_url")
+    .eq("username", normalized).maybeSingle();
 
-  // 1. Get the wallet address for this username
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('wallet_address')
-    .eq('username', username)
-    .single();
+  let profile: { username: string; displayName: string; bio: string; avatarUrl: string | null; websiteUrl: string | null; wallet: string | null };
+  let items: MarketplaceItem[] = [];
+  if (marketplaceProfile) {
+    profile = {
+      username: marketplaceProfile.username,
+      displayName: marketplaceProfile.display_name || marketplaceProfile.username,
+      bio: marketplaceProfile.bio || "",
+      avatarUrl: marketplaceProfile.avatar_url,
+      websiteUrl: marketplaceProfile.website_url,
+      wallet: null,
+    };
+    const { data } = await supabase.from("agents")
+      .select("id,name,description,image_url,price_usd,is_free,statusType,token_symbol")
+      .eq("owner_id", marketplaceProfile.owner_id)
+      .order("created_at", { ascending: false });
+    items = (data ?? []) as MarketplaceItem[];
+  } else {
+    const { data: legacyProfile } = await supabase.from("profiles")
+      .select("username,wallet_address")
+      .eq("username", normalized).maybeSingle();
+    if (!legacyProfile) notFound();
+    profile = { username: legacyProfile.username, displayName: legacyProfile.username, bio: "", avatarUrl: null, websiteUrl: null, wallet: legacyProfile.wallet_address };
+    const { data } = await supabase.from("agents")
+      .select("id,name,description,image_url,price_usd,is_free,statusType,token_symbol")
+      .eq("user_id", legacyProfile.wallet_address)
+      .order("created_at", { ascending: false });
+    items = (data ?? []) as MarketplaceItem[];
+  }
 
-  if (!profile) notFound();
-
-  // 2. Get all items created by this wallet
-  const { data: items } = await supabase
-    .from('agents')
-    .select('*')
-    .eq('user_id', profile.wallet_address)
-    .order('created_at', { ascending: false });
-
-  return (
-    <div className="p-8 md:p-12 max-w-7xl mx-auto">
-      <div className="mb-12 border-b border-gray-800 pb-8">
-        <h1 className="text-4xl font-bold mb-2">@{username}</h1>
-        <p className="text-gray-400 font-mono text-sm">Wallet: {profile.wallet_address}</p>
-      </div>
-
-      <h2 className="text-2xl font-bold mb-6">Published Items</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {items && items.length > 0 ? (
-          items.map((item) => (
-            <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition flex flex-col h-full">
-              <div className="h-40 bg-gray-800 rounded-xl mb-4 overflow-hidden">
-                {item.image_url ? (
-                  <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-600">No Image</div>
-                )}
-              </div>
-              <h3 className="text-lg font-bold mb-2 truncate">{item.name}</h3>
-              <p className="text-gray-400 text-sm mb-4 line-clamp-2 flex-grow">{item.description}</p>
-              <div className="flex justify-between items-center mt-auto pt-4 border-t border-gray-800">
-                <span className="text-white font-bold">
-                  {item.is_free ? "FREE" : `${item.price_usd || 0} $SSDY`}
-                </span>
-                <Link href={`/agent/${item.id}`} className="text-sm bg-gray-800 px-4 py-1.5 rounded-lg hover:bg-gray-700 transition">
-                  View
-                </Link>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500 col-span-full">No items published yet.</p>
-        )}
-      </div>
-    </div>
-  );
+  return <main className="min-h-screen px-5 py-10 text-zinc-100 sm:px-8"><div className="mx-auto max-w-7xl">
+    <section className="flex flex-wrap items-center gap-5 border-b border-zinc-800 pb-8">
+      {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" className="h-20 w-20 rounded-full object-cover" /> : <div className="grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-purple-700 to-cyan-700 text-3xl">{profile.displayName.slice(0,1).toUpperCase()}</div>}
+      <div className="min-w-0 flex-1"><p className="text-sm text-zinc-500">Creator profile</p><h1 className="mt-1 text-3xl font-bold">{profile.displayName}</h1><p className="mt-1 text-purple-300">@{profile.username}</p>{profile.bio&&<p className="mt-3 max-w-2xl text-zinc-400">{profile.bio}</p>}{profile.wallet&&<p className="mt-2 font-mono text-xs text-zinc-600">Wallet: {profile.wallet}</p>}</div>
+      {profile.websiteUrl&&<a href={profile.websiteUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-zinc-700 px-4 py-2 text-sm">Website ↗</a>}
+    </section>
+    <div className="mt-8 flex items-end justify-between"><h2 className="text-2xl font-semibold">Published listings</h2><span className="text-sm text-zinc-500">{items.length}</span></div>
+    {items.length===0?<p className="mt-6 text-zinc-500">No public listings yet.</p>:<div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{items.map((item)=><MarketplaceCard key={item.id} item={item} />)}</div>}
+  </div></main>;
 }

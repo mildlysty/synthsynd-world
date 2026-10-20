@@ -1,6 +1,5 @@
 'use client';
 
-import { useWallet } from '@solana/wallet-adapter-react';
 import { supabase } from '../../../utils/supabase';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, use } from 'react';
@@ -9,7 +8,8 @@ import Link from 'next/link';
 export default function EditAgent({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { publicKey } = useWallet();
+  const [ownerId, setOwnerId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
@@ -23,10 +23,19 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
 
   useEffect(() => {
     async function fetchAgent() {
+      const { data: auth } = await supabase.auth.getSession();
+      const owner = auth.session?.user.id ?? null;
+      setOwnerId(owner);
+      if (!owner) {
+        setLoadError('Sign in to edit your listings.');
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from('agents')
-        .select('*')
+        .select('id,name,description,image_url,price_usd,is_free,owner_id')
         .eq('id', resolvedParams.id)
+        .eq('owner_id', owner)
         .single();
 
       if (data) {
@@ -37,7 +46,7 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
           price_usd: data.price_usd || 0,
           is_free: data.is_free || false,
         });
-      }
+      } else setLoadError(error?.message || 'Listing not found or you do not own it.');
       setLoading(false);
     }
     fetchAgent();
@@ -45,7 +54,7 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!publicKey) return alert("Please connect wallet");
+    if (!ownerId) return setLoadError('Sign in to edit your listings.');
     setSaving(true);
 
     try {
@@ -59,7 +68,7 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
           is_free: formData.is_free,
         })
         .eq('id', resolvedParams.id)
-        .eq('user_id', publicKey.toBase58()); // Security: only owner can edit
+        .eq('owner_id', ownerId);
 
       if (error) throw new Error(error.message);
 
@@ -83,6 +92,7 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
         
         <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8">
           <h1 className="text-3xl font-bold mb-8">Edit Agent</h1>
+          {loadError && <p role="alert" className="mb-5 rounded-xl border border-rose-900 bg-rose-950/30 p-4 text-sm text-rose-200">{loadError}</p>}
           
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div>

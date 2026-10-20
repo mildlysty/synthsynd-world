@@ -1,35 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const listings = [
-  { symbol: "$NOVA", name: "Nova Agent", type: "Agents", price: "$0.084", change: "+12.8%", mcap: "$840K", volume: "$126K", traders: 328, trading: true, isNew: true },
-  { symbol: "$ORBIT", name: "Orbit Prompt", type: "Prompts", price: "$0.031", change: "+8.2%", mcap: "$310K", volume: "$58K", traders: 176, trading: true, isNew: false },
-  { symbol: "$MIND", name: "Mindful Analyst", type: "Agents", price: "$0.017", change: "-2.1%", mcap: "$170K", volume: "$21K", traders: 84, trading: false, isNew: true },
-  { symbol: "$FLOW", name: "Workflow Kit", type: "Prompts", price: "$0.009", change: "+3.4%", mcap: "$91K", volume: "$13K", traders: 52, trading: true, isNew: false },
-];
+type Item = {
+  id: string;
+  name: string;
+  statusType: string | null;
+  token_address: string | null;
+  token_symbol: string | null;
+  price_usd: number | null;
+  created_at: string | null;
+  usdPrice: number | null;
+  priceChange24h: number | null;
+  marketCapUsd: number | null;
+  volume24hUsd: number | null;
+  traders24h: number | null;
+};
 
 const filters = ["All", "Agents", "Prompts", "Trading", "New"] as const;
 type Filter = (typeof filters)[number];
+const money = (value: number | null | undefined) => value == null ? "—" : value < 0.01 && value > 0 ? `$${value.toExponential(2)}` : `$${value.toLocaleString(undefined, { maximumFractionDigits: value < 1 ? 6 : 2 })}`;
+const compactMoney = (value: number | null | undefined) => value == null ? "—" : `$${Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 2 }).format(value)}`;
 
 export default function ScreenerPage() {
+  const [items, setItems] = useState<Item[]>([]);
   const [filter, setFilter] = useState<Filter>("All");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const visibleListings = listings.filter((item) => {
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/solana/market-data", { signal: controller.signal, cache: "no-store" })
+      .then(async (response) => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error || "Could not load listings.");
+        setItems(body.items ?? []);
+      })
+      .catch((reason: unknown) => {
+        if (reason instanceof Error && reason.name !== "AbortError") {
+          setError(reason.message || "Could not load listings.");
+        }
+      })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, []);
+
+  const tokenized = useMemo(() => items.filter((item) => item.token_address), [items]);
+  const visible = tokenized.filter((item) => {
     if (filter === "All") return true;
-    if (filter === "Trading") return item.trading;
-    if (filter === "New") return item.isNew;
-    return item.type === filter;
+    if (filter === "Trading") return Number(item.volume24hUsd) > 0;
+    if (filter === "New") {
+      return item.created_at && Date.now() - new Date(item.created_at).getTime() < 7 * 86400000;
+    }
+    return item.statusType?.toLowerCase() === filter.slice(0, -1).toLowerCase();
   });
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 py-10 text-zinc-100 sm:px-8">
+    <main className="min-h-screen px-5 py-10 text-zinc-100 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <header>
-          <p className="text-sm font-medium text-cyan-400">Market overview</p>
+          <p className="text-sm font-medium text-cyan-300">Market overview</p>
           <h1 className="mt-2 text-4xl font-bold tracking-tight">Token Screener</h1>
           <p className="mt-3 max-w-2xl text-zinc-400">
-            Explore tokenized agents and prompts by market activity.
+            Filter tokenized listings with live price, 24-hour market cap, volume, and trader data.
           </p>
         </header>
 
@@ -37,6 +70,7 @@ export default function ScreenerPage() {
           {filters.map((item) => (
             <button
               key={item}
+              type="button"
               onClick={() => setFilter(item)}
               aria-pressed={filter === item}
               className={`rounded-full border px-4 py-2 text-sm transition ${
@@ -50,39 +84,35 @@ export default function ScreenerPage() {
           ))}
         </div>
 
+        {error && <p role="alert" className="mt-5 rounded-xl border border-rose-900 bg-rose-950/30 p-4 text-sm text-rose-200">{error}</p>}
         <div className="mt-5 overflow-x-auto rounded-2xl border border-zinc-800">
           <table className="w-full min-w-[780px] text-left text-sm">
             <thead className="bg-zinc-900 text-xs uppercase tracking-wide text-zinc-500">
-              <tr>
-                {["Token", "Type", "Price", "24h", "Market cap", "Volume", "Traders"].map((heading) => (
-                  <th key={heading} className="px-5 py-4 font-medium">{heading}</th>
-                ))}
-              </tr>
+              <tr>{["Token", "Type", "Price", "24h", "Market cap", "Volume", "Traders"].map((heading) => <th key={heading} className="px-5 py-4 font-medium">{heading}</th>)}</tr>
             </thead>
             <tbody className="divide-y divide-zinc-800 bg-zinc-950">
-              {visibleListings.map((item) => (
-                <tr key={item.symbol} className="hover:bg-zinc-900/60">
+              {visible.map((item) => (
+                <tr key={item.id} className="hover:bg-zinc-900/60">
                   <td className="px-5 py-4">
-                    <span className="font-semibold">{item.symbol}</span>
-                    <span className="ml-2 text-zinc-500">{item.name}</span>
+                    <div className="font-semibold">{item.token_symbol || item.name}</div>
+                    <div className="mt-1 font-mono text-xs text-zinc-600">{item.token_address?.slice(0, 5)}…{item.token_address?.slice(-5)}</div>
                   </td>
-                  <td className="px-5 py-4 text-zinc-400">{item.type}</td>
-                  <td className="px-5 py-4">{item.price}</td>
-                  <td className={`px-5 py-4 ${item.change.startsWith("+") ? "text-emerald-300" : "text-rose-300"}`}>
-                    {item.change}
-                  </td>
-                  <td className="px-5 py-4">{item.mcap}</td>
-                  <td className="px-5 py-4">{item.volume}</td>
-                  <td className="px-5 py-4">{item.traders}</td>
+                  <td className="px-5 py-4 capitalize text-zinc-400">{item.statusType || "—"}</td>
+                  <td className="px-5 py-4">{money(item.usdPrice)}</td>
+                  <td className={`px-5 py-4 ${Number(item.priceChange24h) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{item.priceChange24h == null ? "—" : `${item.priceChange24h > 0 ? "+" : ""}${item.priceChange24h.toFixed(2)}%`}</td>
+                  <td className="px-5 py-4">{compactMoney(item.marketCapUsd)}</td>
+                  <td className="px-5 py-4">{compactMoney(item.volume24hUsd)}</td>
+                  <td className="px-5 py-4">{item.traders24h?.toLocaleString() ?? "—"}</td>
                 </tr>
               ))}
-              {visibleListings.length === 0 && (
-                <tr><td colSpan={7} className="px-5 py-10 text-center text-zinc-500">No listings match this filter.</td></tr>
+              {!loading && !error && visible.length === 0 && (
+                <tr><td colSpan={7} className="px-5 py-12 text-center text-zinc-500">No tokenized listings match this filter.</td></tr>
               )}
+              {loading && <tr><td colSpan={7} className="px-5 py-12 text-center text-zinc-500">Loading tokenized listings…</td></tr>}
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-xs text-zinc-600">Sample data for layout preview.</p>
+        <p className="mt-3 text-xs text-zinc-600">Market data comes from Jupiter Tokens V2 and is briefly cached. Illiquid or unindexed tokens may have blank metrics.</p>
       </div>
     </main>
   );

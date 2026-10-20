@@ -1,127 +1,62 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { supabase } from '../../utils/supabase';
-import { useWallet } from '@solana/wallet-adapter-react';
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "../../utils/supabase";
+
+type Review = { id: string; reviewer_id: string; rating: number; comment: string; created_at: string; username?: string | null };
 
 export default function Reviews({ agentId }: { agentId: string }) {
-  const { publicKey } = useWallet();
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [session, setSession] = useState<Session | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const fetchReviews = async () => {
-    const { data } = await supabase
-      .from('reviews')
-      .select('*')
-      .eq('agent_id', agentId)
-      .order('created_at', { ascending: false });
-    if (data) setReviews(data);
+  const loadReviews = useCallback(async () => {
+    const { data, error: queryError } = await supabase.from("marketplace_reviews")
+      .select("id,reviewer_id,rating,comment,created_at").eq("listing_id", agentId)
+      .order("created_at", { ascending: false });
+    if (queryError) { setError("Could not load reviews. Apply the account migration to enable reviews."); setLoading(false); return; }
+    const reviewerIds = [...new Set((data ?? []).map((review) => review.reviewer_id))];
+    const { data: profiles } = reviewerIds.length ? await supabase.from("marketplace_profiles")
+      .select("owner_id,username,display_name").in("owner_id", reviewerIds) : { data: [] };
+    const names = new Map((profiles ?? []).map((profile) => [profile.owner_id, profile.display_name || profile.username]));
+    setReviews((data ?? []).map((review) => ({ ...review, username: names.get(review.reviewer_id) ?? null })));
     setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchReviews();
   }, [agentId]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!publicKey) return alert("Please connect your wallet to leave a review.");
-    setSubmitting(true);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
+    loadReviews();
+    return () => listener.subscription.unsubscribe();
+  }, [loadReviews]);
 
-    const { error } = await supabase.from('reviews').insert([
-      {
-        agent_id: agentId,
-        user_wallet: publicKey.toBase58(),
-        rating: rating,
-        comment: comment,
-      },
-    ]);
-
-    if (error) {
-      alert("Error posting review: " + error.message);
-    } else {
-      setComment(''); // clear form
-      fetchReviews(); // reload list
-    }
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!session) return;
+    setSubmitting(true); setError("");
+    const { error: insertError } = await supabase.from("marketplace_reviews").upsert({
+      listing_id: agentId, reviewer_id: session.user.id, rating, comment: comment.trim(), updated_at: new Date().toISOString(),
+    }, { onConflict: "listing_id,reviewer_id" });
+    if (insertError) setError(`Could not save review: ${insertError.message}`);
+    else { setComment(""); await loadReviews(); }
     setSubmitting(false);
-  };
+  }
 
-  const averageRating = reviews.length > 0 
-    ? (reviews.reduce((acc, rev) => acc + rev.rating, 0) / reviews.length).toFixed(1)
-    : "No ratings yet";
-
-  return (
-    <div className="mt-12 bg-gray-900 border border-gray-800 rounded-3xl p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Reviews</h2>
-        <span className="text-xl font-bold text-yellow-400">
-          ⭐ {averageRating}
-        </span>
-      </div>
-
-      {/* REVIEW FORM */}
-      {publicKey ? (
-        <form onSubmit={handleSubmit} className="mb-8 bg-black p-4 rounded-xl border border-gray-800">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-gray-400">Rating:</span>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onClick={() => setRating(star)}
-                className={`text-2xl ${rating >= star ? 'text-yellow-400' : 'text-gray-600'}`}
-              >
-                ★
-              </button>
-            ))}
-          </div>
-          <textarea
-            required
-            placeholder="Write your review..."
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500 mb-3"
-            rows={3}
-          />
-          <button 
-            type="submit" 
-            disabled={submitting}
-            className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg font-semibold transition disabled:opacity-50"
-          >
-            {submitting ? 'Posting...' : 'Post Review'}
-          </button>
-        </form>
-      ) : (
-        <p className="text-gray-400 mb-8 bg-black p-4 rounded-xl border border-gray-800">
-          Connect your wallet to leave a review.
-        </p>
-      )}
-
-      {/* REVIEW LIST */}
-      {loading ? (
-        <p className="text-gray-400">Loading reviews...</p>
-      ) : reviews.length === 0 ? (
-        <p className="text-gray-400">No reviews yet. Be the first!</p>
-      ) : (
-        <div className="space-y-4">
-          {reviews.map((rev) => (
-            <div key={rev.id} className="bg-black p-4 rounded-xl border border-gray-800">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-purple-400 font-mono">
-                  {rev.user_wallet.slice(0, 4)}...{rev.user_wallet.slice(-4)}
-                </span>
-                <span className="text-yellow-400">
-                  {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
-                </span>
-              </div>
-              <p className="text-gray-300">{rev.comment}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  const average = reviews.length ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1) : null;
+  return <section className="mt-12 rounded-3xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8">
+    <div className="flex items-center justify-between"><h2 className="text-2xl font-bold">Reviews</h2><span className="text-sm text-amber-300">{average ? `★ ${average} · ${reviews.length}` : "No reviews yet"}</span></div>
+    {error&&<p role="alert" className="mt-5 rounded-xl border border-rose-900 bg-rose-950/30 p-3 text-sm text-rose-200">{error}</p>}
+    {session?<form onSubmit={submit} className="mt-6 rounded-2xl border border-zinc-800 bg-black p-4">
+      <div className="flex items-center gap-1">{[1,2,3,4,5].map((star)=><button key={star} type="button" aria-label={`${star} stars`} onClick={()=>setRating(star)} className={`text-2xl ${rating>=star?"text-amber-300":"text-zinc-700"}`}>★</button>)}</div>
+      <textarea required maxLength={3000} value={comment} onChange={(event)=>setComment(event.target.value)} rows={3} placeholder="Share what worked well…" className="mt-3 w-full rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-sm outline-none focus:border-purple-500" />
+      <button disabled={submitting} className="mt-3 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold disabled:opacity-50">{submitting?"Saving…":"Submit review"}</button>
+    </form>:<p className="mt-5 rounded-xl border border-zinc-800 p-4 text-sm text-zinc-400">Sign in to write a review. <Link href="/signin" className="text-purple-300 underline">Sign in</Link></p>}
+    <div className="mt-6 space-y-3">{loading?<p className="text-sm text-zinc-500">Loading reviews…</p>:reviews.length===0?<p className="text-sm text-zinc-500">Be the first to review this listing.</p>:reviews.map((review)=><article key={review.id} className="rounded-xl border border-zinc-800 bg-black p-4"><div className="flex justify-between gap-4"><span className="text-sm font-medium">{review.username?`@${review.username}`:`Creator ${review.reviewer_id.slice(0,6)}`}</span><span className="text-amber-300">{"★".repeat(review.rating)}{"☆".repeat(5-review.rating)}</span></div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-400">{review.comment}</p><time className="mt-3 block text-xs text-zinc-600">{new Date(review.created_at).toLocaleDateString()}</time></article>)}</div>
+  </section>;
 }

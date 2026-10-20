@@ -1,36 +1,22 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Synthsynd World
 
-## Getting Started
+An independent AI marketplace built with Next.js, Supabase, Stripe, and Solana wallet tools. It borrows public product patterns from Swarms World but uses its own brand, data, and integrations.
 
-First, run the development server:
+## Run locally
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Install dependencies with `npm install`.
+2. Copy `.env.example` to `.env.local` and fill in the services you want to enable.
+3. Apply every SQL file in `supabase/migrations` in filename order.
+4. Start the app with `npm run dev` and open `http://localhost:3000`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Service setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Supabase:** `NEXT_PUBLIC_SUPABASE_URL` must be the project base URL (`https://<project-ref>.supabase.co`), without `/rest/v1`. Configure the anon key, Google/X OAuth credentials, and local/production redirect URLs. Set the server-only service role key for secure purchase writes, paid-content delivery, API-key quota checks, API-key inference credits, and moderation. Set `ADMIN_USER_IDS` to comma-separated Supabase Auth UUIDs allowed to moderate listings. Apply migrations through `202610200015_marketplace_moderation.sql` before using listing, moderation, API-key, credits, inference, review, competition, token launch, creator-fee claims, or paid bundles. API request quotas are configurable in `marketplace_api_plan_limits` (default free/pro/premium: 60/120/300 per minute and 10k/100k/1m per month).
+- **x402 Bazaar:** set server-only `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` to enable live Coinbase catalog discovery at `/x402-bazaar`. Never expose these values with `NEXT_PUBLIC_` variables.
+- **OpenAI:** Set `OPENAI_API_KEY` and `OPENAI_MODEL` to enable prompt execution and API-key inference. Prompt chat uses `PROMPT_RUN_CREDITS`; agent and swarm calls use `API_INFERENCE_CREDITS` (defaults to the prompt-run cost) and `API_INFERENCE_MAX_TOKENS` caps each generated response.
+- **Stripe:** Set the secret and webhook keys, configure the Pro/Premium recurring Price IDs, enable the customer portal, and point Stripe events to `/api/stripe/webhook`.
+- **Jupiter:** Set the server-only `JUPITER_API_KEY` for launch, creator-fee, and market-data APIs. The older `JUPITER_STUDIO_API_KEY` remains a fallback. The Token API keyless mode is rate-limited; a production key also covers Studio. A user signs launch and fee-claim transactions with their own connected Solana wallet; never store wallet private keys on the server.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Keep `.env.local`, service-role credentials, Stripe secrets, AI provider keys, and Jupiter keys out of source control and client-side `NEXT_PUBLIC_` variables.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The full public feature comparison and remaining parity gaps are in [docs/swarms-world-parity.md](docs/swarms-world-parity.md).
