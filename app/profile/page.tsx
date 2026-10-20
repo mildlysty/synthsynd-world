@@ -100,18 +100,20 @@ export default function ProfilePage() {
                     {agent.is_free ? "FREE" : `${agent.price_usd || 0} $SSDY`}
                   </span>
                   
-                  {/* VIEW AND DELETE BUTTONS */}
                   <div className="flex gap-2">
-                    <Link href={`/agent/${agent.id}`} className="text-sm bg-gray-800 px-4 py-2 rounded-lg hover:bg-gray-700 transition">
-                      View
-                    </Link>
-                    <button 
-                      onClick={() => handleDelete(agent.id)} 
-                      className="text-sm bg-red-900/50 text-red-400 px-4 py-2 rounded-lg hover:bg-red-800 hover:text-white transition"
-                    >
-                      Delete
-                    </button>
-                  </div>
+  <Link href={`/agent/${agent.id}`} className="text-sm bg-gray-800 px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+    View
+  </Link>
+  <Link href={`/edit/${agent.id}`} className="text-sm bg-blue-900/50 text-blue-400 px-4 py-2 rounded-lg hover:bg-blue-800 hover:text-white transition">
+    Edit
+  </Link>
+  <button 
+    onClick={() => handleDelete(agent.id)} 
+    className="text-sm bg-red-900/50 text-red-400 px-4 py-2 rounded-lg hover:bg-red-800 hover:text-white transition"
+  >
+    Delete
+  </button>
+</div>
                 </div>
               </div>
             ))}
