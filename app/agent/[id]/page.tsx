@@ -1,7 +1,7 @@
-import { supabase } from '../../../utils/supabase';
+import { supabase } from '../../utils/supabase';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import BuyButton from '../../../components/BuyButton';
+import BuyButton from '../../components/BuyButton';
 
 export default async function AgentPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
