@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../utils/supabase";
 import CompetitionJoin from "../components/CompetitionJoin";
+import CompetitionCreateForm, { type CreatedCompetition } from "../components/CompetitionCreateForm";
 
 type Competition = {
   id: string; slug: string; title: string; description: string; prize_pool_usd: number;
@@ -55,6 +56,9 @@ export default function CompetitionsPage() {
   const active = competitions.filter((competition) => competition.status === "active" || competition.status === "upcoming");
   const past = competitions.filter((competition) => competition.status === "completed");
   const date = (value: string) => new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const addCompetition = (competition: CreatedCompetition) => {
+    setCompetitions((current) => [competition, ...current.filter((item) => item.id !== competition.id)]);
+  };
 
   return <main className="min-h-screen px-5 py-10 text-zinc-100 sm:px-8"><div className="mx-auto max-w-6xl">
     <header className="rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 via-zinc-950 to-zinc-950 p-8 sm:p-12">
@@ -62,6 +66,7 @@ export default function CompetitionsPage() {
           <p className="mt-3 max-w-2xl text-zinc-400">Challenges and prize pools for creators. Eligible listings show current Jupiter 24-hour market snapshots; organizers still verify winners and handle prize payouts.</p>
       <Link href="/frenzy" className="mt-6 inline-flex rounded-xl bg-amber-400 px-4 py-2.5 font-semibold text-black">Explore Frenzy listings</Link>
     </header>
+    <CompetitionCreateForm onCreated={addCompetition} />
     {error && <p role="alert" className="mt-6 rounded-xl border border-rose-900 bg-rose-950/30 p-4 text-sm text-rose-200">{error}</p>}
     <section className="mt-9"><h2 className="mb-4 text-xl font-semibold">Active and upcoming</h2>
       {loading ? <p className="text-zinc-500">Loading competitions…</p> : !error && active.length === 0 ? <p className="rounded-2xl border border-zinc-800 p-8 text-zinc-500">No active competitions are published.</p> :
