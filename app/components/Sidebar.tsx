@@ -11,7 +11,7 @@ export default function Sidebar() {
   const [isAdmin, setIsAdmin] = useState(false);
   const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-    { name: 'Marketplace', href: '/', icon: '🛒' },
+    { name: 'Marketplace', href: '/marketplace', icon: '🛒' },
     { name: 'Agent Registry', href: '/platform/registry', icon: '🔎' },
     { name: 'Bookmarks', href: '/bookmarks', icon: '🔖' },
     { name: 'Sign in / Account', href: '/signin', icon: '👤' },

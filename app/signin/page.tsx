@@ -46,7 +46,7 @@ export default function SignInPage() {
   return (
     <main className="min-h-screen px-5 py-12 text-zinc-100 sm:px-8">
       <section className="mx-auto max-w-lg rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-2xl shadow-purple-950/20 sm:p-10">
-        <Link href="/" className="text-sm text-purple-300 hover:text-purple-200">← Marketplace</Link>
+        <Link href="/marketplace" className="text-sm text-purple-300 hover:text-purple-200">← Marketplace</Link>
         <p className="mt-8 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">Synthsynd World</p>
         <h1 className="mt-3 text-3xl font-bold">{session ? "Your account" : "Sign in or create an account"}</h1>
         <p className="mt-3 text-sm leading-6 text-zinc-400">
