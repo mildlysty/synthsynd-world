@@ -53,7 +53,7 @@ export default function Create() {
     });
     setSaving(false);
     if (insertError) return setError(`Could not publish item: ${insertError.message}`);
-    router.push('/');
+    router.push('/marketplace');
   };
 
   return (

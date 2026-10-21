@@ -9,6 +9,7 @@ export default function SignInPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
   const [error, setError] = useState("");
+  const [showXSetupHelp, setShowXSetupHelp] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -26,13 +27,19 @@ export default function SignInPage() {
 
   async function signIn(provider: Provider) {
     setError("");
+    setShowXSetupHelp(false);
     setLoadingProvider(provider);
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: window.location.origin },
     });
     if (authError) {
-      setError(authError.message);
+      if (provider === "x" && /provider|enabled|unsupported/i.test(authError.message)) {
+        setError("X sign-in is not enabled in this Supabase project yet. Enable X / Twitter (OAuth 2.0) and add its Client ID and Secret under Authentication → Sign In / Providers.");
+        setShowXSetupHelp(true);
+      } else {
+        setError(authError.message);
+      }
       setLoadingProvider(null);
     }
   }
@@ -82,7 +89,8 @@ export default function SignInPage() {
           </div>
         )}
 
-        {error && <p role="alert" className="mt-5 rounded-xl border border-rose-900 bg-rose-950/30 p-4 text-sm text-rose-200">Sign-in failed: {error}</p>}
+        {error && <p role="alert" className="mt-5 rounded-xl border border-rose-900 bg-rose-950/30 p-4 text-sm leading-6 text-rose-200">{showXSetupHelp ? error : `Sign-in failed: ${error}`}</p>}
+        {showXSetupHelp && <a className="mt-3 inline-flex text-sm text-cyan-200 underline underline-offset-4 hover:text-cyan-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300" href="https://supabase.com/docs/guides/auth/social-login/auth-twitter" target="_blank" rel="noreferrer">Open Supabase’s X sign-in setup guide ↗</a>}
 
         {!session && <p className="mt-6 text-xs leading-5 text-zinc-500">
           Google and X must be enabled in Supabase Authentication, and this site URL must be on the Supabase redirect allow list.

@@ -7,7 +7,7 @@ function publicListing(row: Record<string, unknown>) {
   // Keep the response allowlist explicit: agents also stores private executable
   // and prompt source, which must never be exposed by the public listing API.
   const fields = [
-    "id", "name", "image_url", "price_usd", "user_id", "is_free", "created_at",
+    "id", "name", "image_url", "price_usd", "user_id", "owner_id", "is_free", "created_at",
     "statusType", "category", "tags", "language", "token_address", "token_symbol", "pool_address",
     "fee_selection", "vault_mode",
   ];

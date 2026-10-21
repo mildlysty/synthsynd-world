@@ -1,21 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import AppShell from "./components/AppShell";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://synthsynd-world.vercel.app";
+const pageTitle = "Synthsynd World — Find AI agents. Sell what you build.";
+const pageDescription = "Discover AI agents, tools, prompts, skills, and services. Publish your own work for free or set a price.";
 
 export const metadata: Metadata = {
-  title: "Synthsynd World — Build, launch, and grow",
-  description: "Discover AI agents and tools, publish your work, and build in the open creator economy.",
+  metadataBase: new URL(siteUrl),
+  title: pageTitle,
+  description: pageDescription,
+  alternates: { canonical: "/" },
+  openGraph: { title: pageTitle, description: pageDescription, url: "/", siteName: "Synthsynd World", type: "website" },
+  twitter: { card: "summary", title: pageTitle, description: pageDescription },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}>
+      <body className="antialiased bg-black text-white">
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>
