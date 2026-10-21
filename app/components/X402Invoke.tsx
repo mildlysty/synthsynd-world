@@ -18,10 +18,32 @@ type Requirement = {
 };
 
 function formatPayment(requirements: Requirement[]) {
-  return requirements.map((item) => {
-    const amount = item.amount ?? item.maxAmountRequired ?? "unknown amount";
-    return `${amount} ${item.asset || "units"} on ${item.network || "unknown network"} (${item.scheme || "payment"})`;
-  }).join("\n");
+  const chainNames: Record<string, string> = {
+    "eip155:1": "Ethereum Mainnet",
+    "eip155:10": "Optimism",
+    "eip155:137": "Polygon PoS",
+    "eip155:8453": "Base Mainnet",
+    "eip155:42161": "Arbitrum One",
+    "eip155:43114": "Avalanche C-Chain",
+    "eip155:84532": "Base Sepolia (testnet)",
+    "eip155:11155111": "Sepolia (testnet)",
+  };
+  return requirements.map((item, index) => {
+    const amount = item.amount ?? item.maxAmountRequired;
+    let displayAmount = "unspecified amount";
+    if (amount && /^\d+$/.test(amount)) {
+      try { displayAmount = `${BigInt(amount).toLocaleString()} raw token units`; } catch { /* retain safe fallback */ }
+    }
+    const network = item.network || "unknown network";
+    const networkName = chainNames[network];
+    return [
+      `Option ${index + 1}: ${displayAmount}`,
+      `Network: ${networkName ? `${networkName} (${network})` : network}`,
+      `Token contract: ${item.asset || "not provided"}`,
+      `Recipient: ${item.payTo || "not provided"}`,
+      `Payment scheme: ${item.scheme || "not provided"}`,
+    ].join("\n");
+  }).join("\n\n");
 }
 
 export default function X402Invoke({ endpoint, initialMethod = "GET", initialInput }: { endpoint: string; initialMethod?: string; initialInput?: Record<string, unknown> }) {
@@ -79,8 +101,8 @@ export default function X402Invoke({ endpoint, initialMethod = "GET", initialInp
       if (requirements.length && !requirements.some((item) => item.network?.startsWith("eip155:"))) {
         throw new Error(`This service requires a payment network not supported by this connected EVM wallet.\n${formatPayment(requirements)}`);
       }
-      const terms = requirements.length ? formatPayment(requirements) : "The service returned HTTP 402. The wallet will show the exact authorization before signing.";
-      if (!window.confirm(`This request may authorize a payment to the service. Review the wallet prompt carefully.\n\n${terms}\n\nContinue?`)) return;
+      const terms = requirements.length ? formatPayment(requirements) : "The service returned HTTP 402. The wallet will show the authorization details before signing.";
+      if (!window.confirm(`This request may authorize a payment to the service. Amounts below are raw token units, not a fiat value. Review the network, token contract, recipient, and the wallet prompt carefully.\n\n${terms}\n\nContinue to the wallet?`)) return;
 
       const accounts = await provider.request({ method: "eth_requestAccounts" }) as string[];
       const address = accounts?.[0];
@@ -113,7 +135,7 @@ export default function X402Invoke({ endpoint, initialMethod = "GET", initialInp
       <textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder={method === "GET" || method === "HEAD" ? 'Optional query parameters as JSON, e.g. {"city":"Paris"}' : 'Optional JSON body, e.g. {"input":"..."}'} className="min-h-24 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs sm:col-span-2" />
     </div>
     <button disabled={busy} onClick={invoke} className="mt-3 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-medium hover:bg-cyan-600 disabled:opacity-50">{busy ? "Connecting…" : "Invoke service"}</button>
-    <p className="mt-2 text-xs text-zinc-500">The first request checks the payment terms. Your wallet is asked to sign only after you confirm. Network fees may apply; service availability and CORS are controlled by the provider.</p>
+    <p className="mt-2 text-xs text-zinc-500">The first request checks payment terms. The confirmation shows raw token units, network, token contract, and recipient; raw units are not a fiat price. Your wallet is asked to sign only after you continue. Network fees may apply; service availability and CORS are controlled by the provider.</p>
     {error && <pre className="mt-3 whitespace-pre-wrap rounded-lg border border-rose-900 bg-rose-950/30 p-3 text-xs text-rose-200">{error}</pre>}
     {result && <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-zinc-800 bg-black/40 p-3 text-xs text-zinc-300">{result}</pre>}
   </section>;

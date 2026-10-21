@@ -23,12 +23,14 @@ export default async function Agent({ params }: { params: Promise<{ id: string }
       <div className="min-w-0 flex-1">
         <p className="text-sm uppercase tracking-wide text-cyan-300">{agent.statusType || 'Agent'} listing</p>
         <h1 className="mb-4 mt-2 text-4xl font-bold">{agent.name}</h1>
-        <p className="whitespace-pre-wrap text-lg leading-8 text-zinc-400">{agent.description}</p>
+        {agent.vault_mode && agent.token_address
+          ? <p className="whitespace-pre-wrap text-lg leading-8 text-amber-200">Description and source are reserved for wallets holding this listing’s token.</p>
+          : <p className="whitespace-pre-wrap text-lg leading-8 text-zinc-400">{agent.description}</p>}
         {agent.category && <p className="mt-4 text-sm text-zinc-500">Category: {agent.category}{agent.language ? ` · ${agent.language}` : ''}</p>}
         {agent.x402_url && <X402Invoke endpoint={agent.x402_url} />}
         {agent.tags?.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{agent.tags.map((tag: string)=><span key={tag} className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-400">{tag}</span>)}</div>}
         {agent.statusType === 'mcp' && agent.mcp_server_url && <a href={agent.mcp_server_url} target="_blank" rel="noreferrer" className="mt-6 inline-flex rounded-lg border border-emerald-800 px-4 py-2 text-sm text-emerald-300">Open MCP server ↗</a>}
-        {['agent','prompt','tool','skill'].includes(listingType) && <ListingContent id={agent.id} type={listingType} isFree={agent.is_free} />}
+        {['agent','prompt','tool','skill'].includes(listingType) && <ListingContent id={agent.id} type={listingType} isFree={agent.is_free} holderGated={Boolean(agent.vault_mode && agent.token_address)} tokenAddress={agent.token_address || ''} />}
         <Reviews agentId={agent.id} />
         {agent.token_address && <section className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-950 p-5"><h2 className="font-semibold">Token</h2><p className="mt-2 font-mono text-sm text-zinc-400">{agent.token_symbol ? `$${agent.token_symbol} · ` : ''}{agent.token_address}</p><p className="mt-2 text-sm text-zinc-500">{agent.fee_selection === 'frenzy' ? 'Frenzy creator fee' : 'Standard creator fee'}{agent.vault_mode ? ' · holder-gated access' : ''}</p></section>}
         {agent.token_address && agent.owner_id && agent.token_creator_wallet && <CreatorFeeClaim listingId={agent.id} creatorId={agent.owner_id} creatorWallet={agent.token_creator_wallet} />}

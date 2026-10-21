@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     const offset = Math.min(100_000, Math.max(0, Math.floor(Number(incoming.get("offset")) || 0)));
     params.set("offset", String(offset));
     const type = clean(incoming.get("type"), 12);
-    if (type === "http" || type === "mcp") params.set("type", type);
+    if (type === "http") params.set("type", type);
   } else {
     params.set("query", query);
     for (const name of ["network", "asset", "scheme", "payTo", "urlSubstring", "maxUsdPrice"]) {
@@ -66,7 +66,8 @@ export async function GET(request: Request) {
       console.error("CDP x402 discovery returned an error", response.status);
       return NextResponse.json({ error: "The x402 Bazaar could not return resources right now." }, { status: response.status >= 500 ? 502 : response.status });
     }
-    if (!body || typeof body !== "object") return NextResponse.json({ error: "The x402 Bazaar returned an invalid response." }, { status: 502 });
+    const catalogRows = mode === "search" ? (body as { resources?: unknown } | null)?.resources : (body as { items?: unknown } | null)?.items;
+    if (!body || typeof body !== "object" || !Array.isArray(catalogRows)) return NextResponse.json({ error: "The x402 Bazaar returned an invalid catalog response." }, { status: 502 });
     cache.set(cacheKey, { body, expiresAt: Date.now() + CACHE_TTL_MS });
     if (cache.size > 100) {
       for (const [entryKey, entry] of cache) if (entry.expiresAt <= Date.now()) cache.delete(entryKey);

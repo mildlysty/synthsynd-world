@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { PublicKey } from "@solana/web3.js";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { checkApiKeyQuota } from "../_lib/api-key-quota";
+import { hasHolderAccess } from "../_lib/holder-access";
 
 type ListingType = "agent" | "prompt" | "tool";
 type Listing = Record<string, any> & { id: string; statusType: string; is_free: boolean; owner_id?: string | null; publication_status?: string };
@@ -38,9 +39,9 @@ function csvTags(value: unknown) {
   return text(value, 2000).split(",").map((item) => item.trim()).filter(Boolean).slice(0, 30);
 }
 
-function publicListing(row: Listing, includeContent = false) {
+function publicListing(row: Listing, includeContent = false, holderAccess = false) {
   const result: Record<string, unknown> = {
-    id: row.id, name: row.name, description: row.description, image_url: row.image_url,
+    id: row.id, name: row.name, description: row.vault_mode && row.token_address && !holderAccess ? undefined : row.description, image_url: row.image_url,
     price_usd: row.price_usd, user_id: row.user_id, is_free: row.is_free,
     created_at: row.created_at, statusType: row.statusType, category: row.category,
     tags: row.tags, language: row.language, useCases: row.use_cases, requirements: row.requirements,
@@ -58,15 +59,21 @@ function publicListing(row: Listing, includeContent = false) {
 }
 
 async function loadListing(admin: SupabaseClient, id: string, type?: ListingType): Promise<Listing | null> {
-  let query = admin.from("agents").select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,mcp_server_url,x402_url,requirements,use_cases,links,publication_status").eq("id", id);
+  let query = admin.from("agents").select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,fee_selection,vault_mode,mcp_server_url,x402_url,requirements,use_cases,links,publication_status").eq("id", id);
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) query = admin.from("agents").select("*").eq("id", id);
   if (type) query = query.eq("statusType", type);
   const { data } = await query.maybeSingle();
   return data as Listing | null;
 }
 
-async function entitled(request: Request, listing: Listing, admin: SupabaseClient | null) {
-  const ownerId = await keyOwner(request, admin, new URL(request.url).pathname);
+async function loadGatedDescription(admin: SupabaseClient | null, listing: Listing) {
+  if (!admin || !listing.vault_mode || !listing.token_address) return;
+  const { data } = await admin.from("marketplace_holder_gated_descriptions").select("description").eq("listing_id", listing.id).maybeSingle();
+  if (data) listing.description = data.description;
+}
+
+async function entitled(request: Request, listing: Listing, admin: SupabaseClient | null, knownOwnerId?: string | null) {
+  const ownerId = knownOwnerId !== undefined ? knownOwnerId : await keyOwner(request, admin, new URL(request.url).pathname);
   if (!ownerId) return false;
   if (listing.owner_id === ownerId) return true;
   if (listing.is_free) return true;
@@ -113,8 +120,14 @@ async function getListing(request: Request, type: ListingType, id: string, full:
     const ownerId = await keyOwner(request, configured.admin, new URL(request.url).pathname);
     if (!ownerId || ownerId !== row.owner_id) return NextResponse.json({ error: "Listing not found." }, { status: 404 });
   }
-  const hasContent = full ? await entitled(request, row, configured.admin) : row.is_free;
-  const item = publicListing(row, hasContent);
+  const apiOwnerId = await keyOwner(request, configured.admin, new URL(request.url).pathname);
+  const isOwner = Boolean(apiOwnerId && row.owner_id === apiOwnerId);
+  const holderGated = Boolean(row.vault_mode && row.token_address);
+  const holderAccess = !holderGated || isOwner || await hasHolderAccess(request, id, String(row.token_address));
+  if (holderAccess && holderGated) await loadGatedDescription(configured.admin, row);
+  const hasContent = holderAccess && (full ? (holderGated || await entitled(request, row, configured.admin, apiOwnerId)) : (row.is_free || holderGated));
+  const item = publicListing(row, hasContent, holderAccess);
+  if (!holderAccess) return NextResponse.json({ success: false, error: "A signed wallet holding this listing’s token is required.", data: { ...item, gated: true } }, { status: 403 });
   return NextResponse.json({ success: true, data: item });
 }
 
@@ -245,11 +258,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ comp
       const ownerId = await keyOwner(request, configured.admin, new URL(request.url).pathname);
       if (!ownerId || ownerId !== row.owner_id) return NextResponse.json({ error: "Prompt not found." }, { status: 404 });
     }
-    const allowed = row.is_free || await entitled(request, row, configured.admin);
+    const ownerId = await keyOwner(request, configured.admin, new URL(request.url).pathname);
+    const isOwner = Boolean(ownerId && ownerId === row.owner_id);
+    const holderGated = Boolean(row.vault_mode && row.token_address);
+    const holderAccess = !holderGated || isOwner || await hasHolderAccess(request, id, String(row.token_address));
+    if (holderAccess && holderGated) await loadGatedDescription(configured.admin, row);
+    const allowed = holderAccess && (holderGated || row.is_free || await entitled(request, row, configured.admin, ownerId));
     if (!allowed) return NextResponse.json({ error: "Purchase this prompt or use an API key for an account with access." }, { status: 403 });
     const prompt = typeof row.prompt_body === "string" ? row.prompt_body : "";
     if (!prompt) return NextResponse.json({ error: "Prompt content is unavailable." }, { status: 404 });
-    const publiclyCacheable = row.is_free && (!row.publication_status || row.publication_status === "published");
+    const publiclyCacheable = !holderGated && row.is_free && (!row.publication_status || row.publication_status === "published");
     return new Response(`---\nname: ${JSON.stringify(row.name)}\nlisting_id: ${row.id}\n---\n\n${prompt}`, { headers: { "Content-Type": "text/markdown; charset=utf-8", "Cache-Control": publiclyCacheable ? "public, max-age=60" : "private, no-store" } });
   }
   if (resource === "product" && id === "fees") return NextResponse.json({ error: "On-chain creator-fee accounting is unavailable until the token launch/indexing integration is configured." }, { status: 501 });
@@ -273,17 +291,23 @@ async function searchListings(request: Request) {
       if (!ownerId || ownerId !== row.owner_id) return NextResponse.json({ error: "Listing not found." }, { status: 404 });
     }
     const includeContent = params.get("include_content") === "true";
-    const hasAccess = row.is_free || (includeContent && await entitled(request, row, configured.admin));
-    return NextResponse.json({ success: true, data: publicListing(row, includeContent && hasAccess), access: { has_access: hasAccess, reason: hasAccess ? "free_or_entitled" : "purchase_required" } });
+    const keyUser = await keyOwner(request, configured.admin, new URL(request.url).pathname);
+    const isOwner = Boolean(keyUser && keyUser === row.owner_id);
+    const holderGated = Boolean(row.vault_mode && row.token_address);
+    const holderAccess = !holderGated || isOwner || await hasHolderAccess(request, id, String(row.token_address));
+    const hasAccess = holderAccess && (holderGated || row.is_free || (includeContent && await entitled(request, row, configured.admin, keyUser)));
+    const item = publicListing(row, includeContent && hasAccess, holderAccess);
+    if (!holderAccess) return NextResponse.json({ success: false, data: { ...item, gated: true }, access: { has_access: false, reason: "token_holder_required" } }, { status: 403 });
+    return NextResponse.json({ success: true, data: item, access: { has_access: hasAccess, reason: hasAccess ? (holderGated ? "token_holder" : "free_or_entitled") : "purchase_required" } });
   }
-  let query = configured.public.from("agents").select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol", { count: "exact" }).order("created_at", { ascending: false }).limit(50);
+  let query = configured.public.from("agents").select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,vault_mode", { count: "exact" }).order("created_at", { ascending: false }).limit(50);
   if (queryText) query = query.or(`name.ilike.%${queryText.replace(/[%_,]/g, " ")}%,description.ilike.%${queryText.replace(/[%_,]/g, " ")}%`);
   const { data, error, count } = await query;
   if (error) return NextResponse.json({ error: "Could not search listings." }, { status: 500 });
   let bundleQuery = configured.public.from("marketplace_bundles").select("id,name,description,image_url,price_usd,owner_id,is_free,created_at", { count: "exact" }).eq("status", "published").order("created_at", { ascending: false }).limit(50);
   if (queryText) bundleQuery = bundleQuery.or(`name.ilike.%${queryText.replace(/[%_,]/g, " ")}%,description.ilike.%${queryText.replace(/[%_,]/g, " ")}%`);
   const { data: bundles } = await bundleQuery;
-  const output = [...(data ?? []), ...(bundles ?? []).map((item) => ({ ...item, user_id: item.owner_id, statusType: "bundle" }))];
+  const output = [...(data ?? []).map((row) => publicListing(row as Listing)), ...(bundles ?? []).map((item) => ({ ...item, user_id: item.owner_id, statusType: "bundle" }))];
   return NextResponse.json({ success: true, data: output, total: (count ?? 0) + (bundles?.length ?? 0), access: { has_access: false, reason: "Use a listing detail endpoint to check source access." } });
 }
 
@@ -308,9 +332,9 @@ async function listTokenized(request: Request) {
   if (!configured) return NextResponse.json({ error: "Marketplace database is not configured." }, { status: 503 });
   const params = new URL(request.url).searchParams;
   const page = Math.max(1, Number(params.get("page")) || 1), limit = Math.min(500, Math.max(1, Number(params.get("limit")) || 50));
-  const { data, error, count } = await configured.public.from("agents").select("id,name,description,image_url,user_id,statusType,token_address,token_symbol,pool_address,created_at", { count: "exact" }).not("token_address", "is", null).order("created_at", { ascending: false }).range((page - 1) * limit, page * limit - 1);
+  const { data, error, count } = await configured.public.from("agents").select("id,name,description,image_url,user_id,owner_id,is_free,statusType,token_address,token_symbol,pool_address,vault_mode,created_at", { count: "exact" }).not("token_address", "is", null).order("created_at", { ascending: false }).range((page - 1) * limit, page * limit - 1);
   if (error) return NextResponse.json({ error: "Could not load tokenized listings." }, { status: 500 });
-  return NextResponse.json({ success: true, data: data ?? [], total: count ?? 0, page, limit, has_more: (count ?? 0) > page * limit });
+  return NextResponse.json({ success: true, data: (data ?? []).map((row) => publicListing(row as Listing)), total: count ?? 0, page, limit, has_more: (count ?? 0) > page * limit });
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ compat: string[] }> }) {

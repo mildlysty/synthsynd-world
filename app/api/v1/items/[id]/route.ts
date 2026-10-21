@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { recordApiKeyUsage } from "../../record-key-usage";
 import { getAdminSupabase, getAuthenticatedSupabase } from "../../../_lib/auth";
 import { checkApiKeyQuota } from "../../../_lib/api-key-quota";
+import { hasHolderAccess } from "../../../_lib/holder-access";
 
 function publicFields(row: Record<string, unknown>) {
   const allowed = [
@@ -36,7 +37,7 @@ export async function GET(
   });
   const { data, error } = await supabase
     .from("agents")
-    .select("*")
+    .select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,fee_selection,vault_mode,mcp_server_url,x402_url,requirements,use_cases,links")
     .eq("id", id)
     .maybeSingle();
 
@@ -50,10 +51,15 @@ export async function GET(
     if (!bundle) return NextResponse.json({ error: "Item not found." }, { status: 404 });
     return NextResponse.json({ item: { id: bundle.id, name: bundle.name, description: bundle.description, image_url: bundle.image_url, price_usd: bundle.price_usd, is_free: bundle.is_free, created_at: bundle.created_at, user_id: bundle.owner_id, statusType: "bundle" } });
   }
-  await recordApiKeyUsage(_request, "GET", "/api/v1/items/:id", 200);
+  const auth = await getAuthenticatedSupabase(_request);
+  const owner = Boolean(auth && data.owner_id === auth.user.id);
+  const holderGated = data.vault_mode === true && typeof data.token_address === "string";
+  let hasHolder = false;
+  if (holderGated && !owner) hasHolder = await hasHolderAccess(_request, id, data.token_address);
+  const authorized = !holderGated || owner || hasHolder;
+  await recordApiKeyUsage(_request, "GET", "/api/v1/items/:id", authorized ? 200 : 403);
 
   let content: string | null = null;
-  const auth = await getAuthenticatedSupabase(_request);
   let canReadContent = Boolean(data.is_free);
   if (!data.is_free && auth) {
     if (data.owner_id === auth.user.id) canReadContent = true;
@@ -63,6 +69,7 @@ export async function GET(
       canReadContent = Boolean(purchase);
     }
   }
+  if (holderGated) canReadContent = authorized && (owner || hasHolder || canReadContent);
   if (!canReadContent) {
     const admin = getAdminSupabase();
     if (admin) {
@@ -93,5 +100,16 @@ export async function GET(
       if (body) content = (body as unknown as Record<string, string | null>)[column] ?? null;
     }
   }
-  return NextResponse.json({ item: { ...publicFields(data as Record<string, unknown>), ...(content === null ? {} : { content }) } });
+  const item = publicFields(data as Record<string, unknown>);
+  if (holderGated && authorized) {
+    const admin = getAdminSupabase();
+    if (admin) {
+      const { data: gatedDescription } = await admin.from("marketplace_holder_gated_descriptions")
+        .select("description").eq("listing_id", id).maybeSingle();
+      if (gatedDescription) item.description = gatedDescription.description;
+    }
+  }
+  if (holderGated && !authorized) delete item.description;
+  return NextResponse.json({ item: { ...item, ...(holderGated && !authorized ? { gated: true } : {}), ...(content === null ? {} : { content }) } },
+    holderGated && !authorized ? { status: 403 } : undefined);
 }

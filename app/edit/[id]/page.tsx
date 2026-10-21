@@ -33,15 +33,21 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
       }
       const { data, error } = await supabase
         .from('agents')
-        .select('id,name,description,image_url,price_usd,is_free,owner_id')
+        .select('id,name,description,image_url,price_usd,is_free,owner_id,vault_mode,token_address')
         .eq('id', resolvedParams.id)
         .eq('owner_id', owner)
         .single();
 
       if (data) {
+        let description = data.description || '';
+        if (data.vault_mode && data.token_address && auth.session?.access_token) {
+          const response = await fetch(`/api/v1/items/${encodeURIComponent(data.id)}`, { headers: { Authorization: `Bearer ${auth.session.access_token}` }, cache: 'no-store' });
+          const result = await response.json().catch(() => null);
+          if (response.ok && typeof result?.item?.description === 'string') description = result.item.description;
+        }
         setFormData({
           name: data.name || '',
-          description: data.description || '',
+          description,
           image_url: data.image_url || '',
           price_usd: data.price_usd || 0,
           is_free: data.is_free || false,

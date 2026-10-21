@@ -4,14 +4,15 @@ import { recordApiKeyUsage } from "../record-key-usage";
 import { checkApiKeyQuota } from "../../_lib/api-key-quota";
 
 function publicListing(row: Record<string, unknown>) {
-  // Read the installed table schema with `*` so optional columns added by later
-  // migrations do not take down the marketplace. Keep this allowlist explicit:
-  // agents also stores private executable and prompt source.
-  return Object.fromEntries([
-    "id", "name", "description", "image_url", "price_usd", "user_id", "is_free", "created_at",
+  // Keep the response allowlist explicit: agents also stores private executable
+  // and prompt source, which must never be exposed by the public listing API.
+  const fields = [
+    "id", "name", "image_url", "price_usd", "user_id", "is_free", "created_at",
     "statusType", "category", "tags", "language", "token_address", "token_symbol", "pool_address",
     "fee_selection", "vault_mode",
-  ].filter((key) => key in row).map((key) => [key, row[key]]));
+  ];
+  if (!(row.vault_mode === true && row.token_address)) fields.push("description");
+  return Object.fromEntries(fields.filter((key) => key in row).map((key) => [key, row[key]]));
 }
 
 function missingBundlesTable(error: { code?: string; message?: string } | null) {
@@ -62,7 +63,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ items: (data ?? []).map((item) => ({ ...item, user_id: item.owner_id, statusType: "bundle" })), count: count ?? 0, limit, offset });
   }
 
-  let itemQuery = supabase.from("agents").select("*", { count: "exact" })
+  let itemQuery = supabase.from("agents")
+    .select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,fee_selection,vault_mode,mcp_server_url,x402_url,requirements,use_cases,links", { count: "exact" })
     .order("created_at", { ascending: false });
   if (requestedType !== "all") itemQuery = itemQuery.eq("statusType", requestedType);
   if (safeQuery) itemQuery = itemQuery.or(`name.ilike.%${safeQuery}%,description.ilike.%${safeQuery}%`);

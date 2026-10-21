@@ -17,6 +17,7 @@ export async function POST(request: Request) {
   const signedTransaction = String(form.get("signedTransaction") || "");
   const tokenSymbol = String(form.get("tokenSymbol") || "").trim().toUpperCase();
   const feeSelection = String(form.get("feeSelection") || "");
+  const vaultMode = String(form.get("vaultMode") || "false") === "true";
   const image = form.get("headerImage");
   if (!/^[0-9a-f-]{36}$/i.test(listingId) || !/^[A-Z0-9]{2,10}$/.test(tokenSymbol) || !["market", "frenzy"].includes(feeSelection) || !signedTransaction || signedTransaction.length > 2_000_000) {
     return NextResponse.json({ error: "Launch details are missing or invalid." }, { status: 400 });
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
   const jupiterForm = new FormData();
   jupiterForm.set("transaction", signedTransaction);
   jupiterForm.set("owner", ownerWallet);
-  jupiterForm.set("content", JSON.stringify({ name: String(listing.name).slice(0, 32), symbol: tokenSymbol, description: listing.description || "" }));
+  jupiterForm.set("content", JSON.stringify({ name: String(listing.name).slice(0, 32), symbol: tokenSymbol, description: vaultMode ? "Token holder access is enabled. Visit Synthsynd World to verify access." : listing.description || "" }));
   if (image instanceof File) jupiterForm.set("headerImage", image, image.name);
 
   let result: any;
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
   const { error: updateError } = await auth.supabase.from("agents").update({
     token_address: mint, token_symbol: tokenSymbol, launch_config_key: configKey,
     token_creator_wallet: ownerWallet, fee_selection: feeSelection,
+    vault_mode: vaultMode,
   }).eq("id", listingId).eq("owner_id", auth.user.id);
   if (updateError) {
     return NextResponse.json({ error: "The token was launched, but the listing could not be updated. Use the authenticated recovery endpoint with this mint and config key.", mint, configKey }, { status: 500 });

@@ -16,7 +16,7 @@ export default function Sidebar() {
     { name: 'Bookmarks', href: '/bookmarks', icon: '🔖' },
     { name: 'Sign in / Account', href: '/signin', icon: '👤' },
     { name: 'Settings', href: '/settings', icon: '⚙️' },
-    { name: 'Seller Payouts', href: '/payouts', icon: '💳' },
+    { name: 'Creator Payouts', href: '/payouts', icon: '💳' },
     { name: 'Pricing', href: '/pricing', icon: '💎' },
     { name: 'API Credits', href: '/credits', icon: '🪙' },
     { name: 'My Items', href: '/profile', icon: '📋' },

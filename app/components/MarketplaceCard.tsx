@@ -12,6 +12,8 @@ export type MarketplaceItem = {
   token_symbol?: string | null;
   category?: string | null;
   tags?: string[] | null;
+  vault_mode?: boolean | null;
+  token_address?: string | null;
 };
 
 export function itemHref(item: MarketplaceItem) {
@@ -38,7 +40,7 @@ export default function MarketplaceCard({ item }: { item: MarketplaceItem }) {
           <span className="text-xs text-emerald-300">{item.token_symbol ? `$${item.token_symbol}` : item.category || ""}</span>
         </div>
         <Link href={itemHref(item)} className="mt-3 line-clamp-1 text-lg font-semibold hover:text-purple-200">{item.name}</Link>
-        <p className="mt-2 line-clamp-3 text-sm leading-5 text-zinc-500">{item.description || "No description provided."}</p>
+        <p className="mt-2 line-clamp-3 text-sm leading-5 text-zinc-500">{item.vault_mode && item.token_address ? "Token holders can reveal this listing’s details." : item.description || "No description provided."}</p>
         {item.tags && item.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{item.tags.slice(0,3).map((tag)=><span key={tag} className="rounded-full border border-zinc-800 px-2 py-0.5 text-[10px] text-zinc-500">{tag}</span>)}</div>}
         <div className="mt-auto flex items-center justify-between gap-2 pt-5">
           <span className="font-semibold text-purple-200">{item.is_free ? "Free" : `$${Number(item.price_usd || 0).toFixed(2)}`}</span>

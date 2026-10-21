@@ -44,6 +44,8 @@ export default function X402BazaarPage() {
   const [network, setNetwork] = useState("");
   const [resources, setResources] = useState<Resource[]>([]);
   const [partial, setPartial] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -53,6 +55,7 @@ export default function X402BazaarPage() {
     const params = new URLSearchParams({ limit: "20" });
     if (query) params.set("query", query);
     if (network) params.set("network", network);
+    if (!query) params.set("offset", String(offset));
     try {
       const response = await fetch(`/api/x402/bazaar?${params}`, { signal, cache: "no-store" });
       const body = await response.json();
@@ -63,6 +66,7 @@ export default function X402BazaarPage() {
       }
       setResources(Array.isArray(body.resources) ? body.resources : body.items ?? []);
       setPartial(body.partialResults === true);
+      setTotalCount(Number.isFinite(body.pagination?.total) ? body.pagination.total : 0);
     } catch (cause) {
       if (cause instanceof Error && cause.name !== "AbortError") {
         setError((cause as Error & { code?: string }).code === "CDP_NOT_CONFIGURED"
@@ -70,7 +74,7 @@ export default function X402BazaarPage() {
           : cause.message);
       }
     } finally { setLoading(false); }
-  }, [query, network]);
+  }, [query, network, offset]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -83,14 +87,14 @@ export default function X402BazaarPage() {
       <p className="text-sm font-medium text-cyan-300">Pay-per-request services</p>
       <h1 className="mt-2 text-4xl font-bold tracking-tight">x402 Bazaar</h1>
       <p className="mt-3 max-w-2xl text-zinc-400">Search services registered in Coinbase’s x402 catalog. Review payment requirements before connecting your wallet; each service provider controls its API and response.</p>
-      <form onSubmit={(event) => { event.preventDefault(); setQuery(searchText.trim()); }} className="mt-7 flex max-w-3xl flex-col gap-3 sm:flex-row">
+      <form onSubmit={(event) => { event.preventDefault(); setOffset(0); setNetwork(""); setQuery(searchText.trim()); }} className="mt-7 flex max-w-3xl flex-col gap-3 sm:flex-row">
         <input value={searchText} onChange={(event) => setSearchText(event.target.value)} maxLength={400} placeholder="Search services, e.g. weather or market data" className="min-w-0 flex-1 rounded-xl border border-zinc-700 bg-black/70 px-4 py-3 outline-none focus:border-cyan-500" />
         <select aria-label="Payment network" title={query ? "Filter by payment network" : "Enter a search before filtering by network"} disabled={!query} value={network} onChange={(event) => setNetwork(event.target.value)} className="rounded-xl border border-zinc-700 bg-black/70 px-3 py-3 text-sm disabled:opacity-50"><option value="">All networks</option><option value="eip155:8453">Base</option><option value="eip155:84532">Base Sepolia</option><option value="solana:mainnet">Solana</option></select>
         <button className="rounded-xl bg-cyan-700 px-5 py-3 font-semibold hover:bg-cyan-600">Search</button>
       </form>
     </header>
 
-    <div className="mt-7 flex items-center justify-between gap-4"><h2 className="text-xl font-semibold">{query ? `Results for “${query}”` : "Recently discovered services"}</h2><button onClick={() => { setSearchText(""); setQuery(""); }} className="text-sm text-cyan-300 hover:text-cyan-200">Browse all</button></div>
+    <div className="mt-7 flex items-center justify-between gap-4"><div><h2 className="text-xl font-semibold">{query ? `Results for “${query}”` : "Recently discovered services"}</h2>{!query && totalCount > 0 && <p className="mt-1 text-xs text-zinc-500">Showing {offset + 1}–{Math.min(offset + resources.length, totalCount)} of {totalCount.toLocaleString()}</p>}</div><button onClick={() => { setSearchText(""); setQuery(""); setNetwork(""); setOffset(0); }} className="text-sm text-cyan-300 hover:text-cyan-200">Browse all</button></div>
     {error && <div role="alert" className="mt-5 rounded-xl border border-amber-800 bg-amber-950/30 p-4 text-sm text-amber-200">{error}</div>}
     {loading ? <p className="mt-6 text-sm text-zinc-500">Loading x402 services…</p> : !error && resources.length === 0 ? <div className="mt-5 rounded-2xl border border-dashed border-zinc-800 p-12 text-center text-zinc-500">No x402 services matched this search.</div> : (
       <div className="mt-5 grid gap-4 lg:grid-cols-2">{resources.map((resource, index) => {
@@ -111,6 +115,7 @@ export default function X402BazaarPage() {
       })}</div>
     )}
     {partial && <p className="mt-4 text-xs text-zinc-500">The Bazaar returned a partial result set. Refine your search to find other services.</p>}
+    {!loading && !query && totalCount > 20 && <nav aria-label="Bazaar catalog pages" className="mt-6 flex items-center justify-between"><button type="button" onClick={() => setOffset(Math.max(0, offset - 20))} disabled={offset === 0} className="rounded-lg border border-zinc-700 px-4 py-2 text-sm disabled:opacity-40">Previous</button><button type="button" onClick={() => setOffset(offset + 20)} disabled={offset + 20 >= totalCount} className="rounded-lg border border-zinc-700 px-4 py-2 text-sm disabled:opacity-40">Next</button></nav>}
     <p className="mt-5 text-xs leading-5 text-zinc-600">Catalog metadata comes from Coinbase CDP. A browser wallet is used for payment; private keys are never requested by this app. Never sign a payment you do not recognize.</p>
   </div></main>;
 }

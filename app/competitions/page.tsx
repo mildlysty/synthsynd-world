@@ -12,6 +12,7 @@ type Competition = {
 };
 type Entry = { competition_id: string; listing_id: string; owner_id: string; status: string };
 type MarketItem = { id: string; name: string; owner_id: string; token_symbol: string | null; marketCapUsd: number | null; volume24hUsd: number | null };
+type CompetitionResult = { competition_id: string; listing_id: string; listing_name: string; rank: number; estimated_volume_usd: number };
 
 export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
@@ -20,6 +21,7 @@ export default function CompetitionsPage() {
   const [entryCounts, setEntryCounts] = useState<Record<string, number>>({});
   const [entries, setEntries] = useState<Entry[]>([]);
   const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
+  const [results, setResults] = useState<CompetitionResult[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -33,6 +35,8 @@ export default function CompetitionsPage() {
           const rows = (data ?? []) as Competition[];
           setCompetitions(rows);
           if (rows.length) {
+            const { data: scoredResults } = await supabase.from("marketplace_competition_results").select("competition_id,listing_id,listing_name,rank,estimated_volume_usd").in("competition_id", rows.map((item) => item.id)).order("rank", { ascending: true });
+            if (active && scoredResults) setResults(scoredResults as CompetitionResult[]);
             const { data: rowsOfEntries } = await supabase.from("marketplace_competition_entries").select("competition_id,listing_id,owner_id,status").in("competition_id", rows.map((item) => item.id));
             if (active) {
               setEntries((rowsOfEntries ?? []) as Entry[]);
@@ -71,7 +75,7 @@ export default function CompetitionsPage() {
         </article>)}</div>}
     </section>
     <section className="mt-12"><h2 className="mb-4 text-xl font-semibold">Past competitions</h2>
-      {!loading && !error && past.length === 0 ? <p className="rounded-2xl border border-zinc-800 p-8 text-zinc-500">Past results will appear here after competitions are completed.</p> : <div className="divide-y divide-zinc-800 rounded-2xl border border-zinc-800">{past.map((competition)=><div key={competition.id} className="flex flex-wrap items-center justify-between gap-4 bg-zinc-950 p-5"><div><h3 className="font-semibold">{competition.title}</h3><p className="mt-1 text-sm text-zinc-500">Winner: {competition.winner_display_name || "Not recorded"} · {date(competition.ends_at)}</p></div><span className="font-semibold text-emerald-300">${Number(competition.winner_prize_usd ?? competition.prize_pool_usd).toLocaleString()} awarded</span></div>)}</div>}
+      {!loading && !error && past.length === 0 ? <p className="rounded-2xl border border-zinc-800 p-8 text-zinc-500">Past results will appear here after competitions are completed.</p> : <div className="divide-y divide-zinc-800 rounded-2xl border border-zinc-800">{past.map((competition)=><div key={competition.id} className="bg-zinc-950 p-5"><div className="flex flex-wrap items-center justify-between gap-4"><div><h3 className="font-semibold">{competition.title}</h3><p className="mt-1 text-sm text-zinc-500">Winner: {competition.winner_display_name || "Not recorded"} · {date(competition.ends_at)}</p></div><span className="font-semibold text-emerald-300">${Number(competition.winner_prize_usd ?? competition.prize_pool_usd).toLocaleString()} prize pool</span></div><div className="mt-4 space-y-2">{results.filter((result) => result.competition_id === competition.id).map((result) => <p key={result.listing_id} className="flex justify-between gap-4 rounded-lg bg-black/40 px-3 py-2 text-sm"><span className="text-zinc-300">#{result.rank} {result.listing_name || `Listing ${result.listing_id.slice(0, 8)}`}</span><span className="text-zinc-500">~${Number(result.estimated_volume_usd).toLocaleString(undefined, { maximumFractionDigits: 2 })} estimated volume</span></p>)}{!results.some((result) => result.competition_id === competition.id) && <p className="text-xs text-zinc-600">Historical results have not been scored yet.</p>}</div></div>)}</div>}
     </section>
   </div></main>;
 }

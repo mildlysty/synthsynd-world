@@ -33,6 +33,31 @@ async function feeState(apiKey: string, mint: string) {
 
 export async function GET(request: Request) {
   const listingId = new URL(request.url).searchParams.get("listingId") || "";
+  if (!listingId) {
+    const auth = await getAuthenticatedSupabase(request);
+    if (!auth) return NextResponse.json({ error: "Sign in to view creator fees." }, { status: 401 });
+    const apiKey = process.env.JUPITER_API_KEY || process.env.JUPITER_STUDIO_API_KEY;
+    if (!apiKey) return NextResponse.json({ error: "Jupiter Studio is not configured." }, { status: 503 });
+    const { data: listings, error } = await auth.supabase.from("agents")
+      .select("id,name,token_address,token_creator_wallet,owner_id")
+      .eq("owner_id", auth.user.id).not("token_address", "is", null).order("created_at", { ascending: false }).limit(100);
+    if (error) return NextResponse.json({ error: "Could not load your token listings. Apply the token migrations first." }, { status: 500 });
+    const items: Array<{ listingId: string; name: string; mint: string; creatorWallet: string | null; poolAddress?: string; unclaimed?: string; total?: string; quoteDecimals?: number; error?: string }> = [];
+    for (let offset = 0; offset < (listings ?? []).length; offset += 8) {
+      const batch = await Promise.all((listings ?? []).slice(offset, offset + 8).map(async (listing) => {
+        try {
+          const fees = await feeState(apiKey, listing.token_address);
+          return { listingId: listing.id, name: listing.name, mint: listing.token_address, creatorWallet: listing.token_creator_wallet, poolAddress: fees.poolAddress, unclaimed: fees.unclaimed, total: fees.total, quoteDecimals: 6 };
+        } catch (cause) {
+          return { listingId: listing.id, name: listing.name, mint: listing.token_address, creatorWallet: listing.token_creator_wallet, error: cause instanceof Error ? cause.message : "Creator fees are unavailable." };
+        }
+      }));
+      items.push(...batch);
+    }
+    const valid = items.filter((item): item is typeof item & { unclaimed: string; total: string; quoteDecimals: number } => "unclaimed" in item && "total" in item);
+    const sum = (field: "unclaimed" | "total") => valid.reduce((total, item) => total + BigInt(item[field]), BigInt(0)).toString();
+    return NextResponse.json({ ownerId: auth.user.id, items, unclaimed: sum("unclaimed"), total: sum("total"), quoteDecimals: 6 });
+  }
   if (!/^[0-9a-f-]{36}$/i.test(listingId)) return NextResponse.json({ error: "A valid listingId is required." }, { status: 400 });
   const ctx = await ownerListing(request, listingId);
   if ("response" in ctx) return ctx.response;

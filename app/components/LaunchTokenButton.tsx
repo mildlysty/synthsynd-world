@@ -27,6 +27,7 @@ export default function LaunchTokenButton({ listingId, name, description, ownerI
   const router = useRouter();
   const [symbol, setSymbol] = useState('');
   const [feeSelection, setFeeSelection] = useState<'market' | 'frenzy'>('market');
+  const [holderGated, setHolderGated] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
@@ -60,12 +61,12 @@ export default function LaunchTokenButton({ listingId, name, description, ownerI
       const authorization = { Authorization: `Bearer ${session.access_token}` };
       const txInfo = await readJson(await fetch('/api/solana/launch/create-tx', {
         method: 'POST', headers: { ...authorization, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingId, ownerWallet: publicKey.toBase58(), tokenSymbol: ticker, feeSelection, imageContentType: image.type }),
+        body: JSON.stringify({ listingId, ownerWallet: publicKey.toBase58(), tokenSymbol: ticker, feeSelection, vaultMode: holderGated, imageContentType: image.type }),
       }));
 
       const imageUpload = await fetch(txInfo.imagePresignedUrl, { method: 'PUT', headers: { 'Content-Type': image.type }, body: image });
       if (!imageUpload.ok) throw new Error('Could not upload the token image to Jupiter.');
-      const metadata = { name: name.slice(0, 32), symbol: ticker, description, image: txInfo.imageUrl, website: '', twitter: '', telegram: '' };
+      const metadata = { name: name.slice(0, 32), symbol: ticker, description: holderGated ? 'Token holder access is enabled. Visit Synthsynd World to verify access.' : description, image: txInfo.imageUrl, website: '', twitter: '', telegram: '' };
       const metadataUpload = await fetch(txInfo.metadataPresignedUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(metadata) });
       if (!metadataUpload.ok) throw new Error('Could not upload token metadata to Jupiter.');
 
@@ -75,6 +76,7 @@ export default function LaunchTokenButton({ listingId, name, description, ownerI
       form.set('listingId', listingId); form.set('ownerWallet', publicKey.toBase58());
       form.set('signedTransaction', bytesToBase64(signed.serialize()));
       form.set('tokenSymbol', ticker); form.set('feeSelection', feeSelection); form.set('headerImage', image, image.name);
+      form.set('vaultMode', String(holderGated));
       const result = await readJson(await fetch('/api/solana/launch/submit', { method: 'POST', headers: authorization, body: form }));
       setMessage(`Token launched: ${result.mint}`);
       router.refresh();
@@ -89,6 +91,7 @@ export default function LaunchTokenButton({ listingId, name, description, ownerI
     <form onSubmit={launch} className="mt-5 grid gap-4 sm:grid-cols-2">
       <label className="text-sm text-zinc-300">Token ticker<input required minLength={2} maxLength={10} pattern="[A-Za-z0-9]{2,10}" value={symbol} onChange={e => setSymbol(e.target.value)} placeholder="SWARM" className="mt-2 w-full rounded-lg border border-zinc-700 bg-black p-3 uppercase" /></label>
       <label className="text-sm text-zinc-300">Launch mode<select value={feeSelection} onChange={e => setFeeSelection(e.target.value as 'market' | 'frenzy')} className="mt-2 w-full rounded-lg border border-zinc-700 bg-black p-3"><option value="market">Standard</option><option value="frenzy">Frenzy</option></select></label>
+      <label className="flex items-start gap-3 rounded-xl border border-zinc-800 bg-black/40 p-4 text-sm text-zinc-300 sm:col-span-2"><input type="checkbox" checked={holderGated} onChange={event => setHolderGated(event.target.checked)} className="mt-1 accent-amber-500" /><span><b className="block text-zinc-100">Require token-holder access</b><span className="mt-1 block text-xs leading-5 text-zinc-500">Only wallets holding this token can reveal the listing description and source. The on-chain token metadata will use a generic description so your private listing description is not published there. Visitors sign a message; no payment transaction is sent.</span></span></label>
       <label className="text-sm text-zinc-300 sm:col-span-2">Token image<input required type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => setImage(e.target.files?.[0] || null)} className="mt-2 block w-full rounded-lg border border-zinc-700 bg-black p-3 text-sm" /></label>
       {error && <p role="alert" className="sm:col-span-2 rounded-lg border border-rose-900 bg-rose-950/30 p-3 text-sm text-rose-200">{error}</p>}
       {message && <p className="sm:col-span-2 break-all rounded-lg border border-emerald-900 bg-emerald-950/30 p-3 text-sm text-emerald-200">{message}</p>}

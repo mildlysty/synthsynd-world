@@ -5,7 +5,7 @@ import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { VersionedTransaction } from '@solana/web3.js';
 import { supabase } from '../../utils/supabase';
 
-type Props = { listingId: string; creatorId: string; creatorWallet: string; };
+type Props = { listingId: string; creatorId: string; creatorWallet: string; onClaimed?: () => void | Promise<void>; };
 type FeeState = { unclaimed: string; total: string; poolAddress: string; quoteDecimals: number };
 
 function usdc(raw: string, decimals: number) {
@@ -13,7 +13,7 @@ function usdc(raw: string, decimals: number) {
   return Number.isFinite(value) ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : '—';
 }
 
-export default function CreatorFeeClaim({ listingId, creatorId, creatorWallet }: Props) {
+export default function CreatorFeeClaim({ listingId, creatorId, creatorWallet, onClaimed }: Props) {
   const { connection } = useConnection();
   const { publicKey, signTransaction } = useWallet();
   const [allowed, setAllowed] = useState(false);
@@ -68,6 +68,7 @@ export default function CreatorFeeClaim({ listingId, creatorId, creatorWallet }:
       const confirmed = await connection.confirmTransaction(txid, 'confirmed');
       if (confirmed.value.err) throw new Error(`Claim transaction failed: ${JSON.stringify(confirmed.value.err)}`);
       await refreshFees();
+      await onClaimed?.();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Creator fee claim failed.');
     } finally { setBusy(false); }

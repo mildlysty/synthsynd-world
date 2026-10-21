@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getAuthenticatedSupabase } from "../_lib/auth";
+import { hasHolderAccess } from "../_lib/holder-access";
 
 export const runtime = "nodejs";
 
@@ -21,10 +22,13 @@ export async function POST(request: Request) {
   if (!message || message.length > 8000) return NextResponse.json({ error: "Enter a message of 1–8,000 characters." }, { status: 400 });
 
   const { data: listing, error: listingError } = await supabase.from("agents")
-    .select("id,name,statusType,is_free,description,owner_id")
+    .select("id,name,statusType,is_free,description,owner_id,token_address,vault_mode")
     .eq("id", listingId).maybeSingle();
   if (listingError) return NextResponse.json({ error: "Could not load this prompt." }, { status: 500 });
   if (!listing || String(listing.statusType).toLowerCase() !== "prompt") return NextResponse.json({ error: "Prompt not found." }, { status: 404 });
+  if (listing.vault_mode && listing.token_address && listing.owner_id !== user.id && !(await hasHolderAccess(request, listingId, listing.token_address))) {
+    return NextResponse.json({ error: "A signed wallet holding this listing’s token is required to run this prompt." }, { status: 403 });
+  }
   let entitled = Boolean(listing.is_free) || listing.owner_id === user.id;
   if (!entitled) {
     const { data: purchase } = await supabase.from("marketplace_purchases").select("id")

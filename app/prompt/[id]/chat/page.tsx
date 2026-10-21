@@ -3,23 +3,47 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { supabase } from "../../../../utils/supabase";
 
-type Listing = { id: string; name: string; description: string; is_free: boolean; statusType: string; content?: string };
+type Listing = { id: string; name: string; description: string; is_free: boolean; statusType: string; content?: string; gated?: boolean; vault_mode?: boolean; token_address?: string };
 type Message = { role: "user" | "assistant"; content: string };
 
 export default function PromptChatPage() {
   const { id } = useParams<{ id: string }>();
+  const { publicKey, signMessage } = useWallet();
   const [listing, setListing] = useState<Listing | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  async function holderHeaders() {
+    if (!listing?.vault_mode || !listing.token_address) return {} as Record<string, string>;
+    if (!publicKey || !signMessage) return {} as Record<string, string>;
+    const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)), (value) => value.toString(16).padStart(2, "0")).join("");
+    const message = `synthsynd-holder-access:${id}:${listing.token_address}:${Date.now()}:${nonce}`;
+    const signature = await signMessage(new TextEncoder().encode(message));
+    return { "x-holder-wallet": publicKey.toBase58(), "x-holder-message": message, "x-holder-signature": btoa(String.fromCharCode(...signature)) } as Record<string, string>;
+  }
+
+  async function verifyHolder() {
+    setError("");
+    try {
+      const headers = await holderHeaders();
+      const response = await fetch(`/api/v1/items/${encodeURIComponent(id)}`, { headers, cache: "no-store" });
+      const payload = await response.json();
+      if (payload.item) setListing(payload.item);
+      if (!response.ok) throw new Error(payload.error || "This wallet does not hold the access token.");
+      setListing(payload.item);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not verify wallet access."); }
+  }
+
   useEffect(() => {
     let active = true;
     fetch(`/api/v1/items/${encodeURIComponent(id)}`).then(async (response) => {
       const payload = await response.json();
+      if (payload.item) setListing(payload.item);
       if (!response.ok) throw new Error(payload.error || "Could not load prompt.");
       if (active) setListing(payload.item);
     }).catch((reason: unknown) => {
@@ -39,9 +63,10 @@ export default function PromptChatPage() {
     try {
       const { data } = await supabase.auth.getSession();
       if (!data.session) throw new Error("Sign in to run prompts.");
+      const walletHeaders = await holderHeaders();
       const response = await fetch("/api/prompt-run", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}`, ...walletHeaders },
         body: JSON.stringify({ listingId: id, message: text }),
       });
       const result = await response.json();
@@ -58,6 +83,7 @@ export default function PromptChatPage() {
     <Link href={`/prompt/${id}`} className="text-sm text-purple-300 hover:text-purple-200">← Back to prompt</Link>
     <h1 className="mt-5 text-3xl font-bold">{listing?.name || "Run prompt"}</h1>
     <p className="mt-2 text-sm text-zinc-400">{listing?.description || "Chat with this marketplace prompt."}</p>
+    {listing?.vault_mode && <div className="mt-5 rounded-xl border border-amber-900 bg-amber-950/20 p-4 text-sm text-amber-100">This prompt is token holder gated. <button type="button" onClick={verifyHolder} className="ml-2 rounded-lg bg-amber-500 px-3 py-1.5 font-semibold text-black">Verify token holder</button></div>}
     {listing && !listing.is_free && <div className="mt-6 rounded-xl border border-amber-800 bg-amber-950/40 p-4 text-sm text-amber-200">Paid prompt execution is unavailable until purchase entitlements are configured.</div>}
     {listing?.is_free && !listing.content && <div className="mt-6 rounded-xl border border-zinc-800 p-4 text-sm text-zinc-400">This prompt has no runnable prompt body.</div>}
     <section className="mt-8 min-h-80 space-y-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
