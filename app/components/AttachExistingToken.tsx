@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useWallet, WalletMultiButton } from '@solana/wallet-adapter-react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { PublicKey } from '@solana/web3.js';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../utils/supabase';
