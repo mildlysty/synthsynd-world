@@ -4,8 +4,8 @@ import { Providers } from "./providers";
 import AppShell from "./components/AppShell";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://synthsynd-world.vercel.app";
-const pageTitle = "Synthsynd World — Find AI agents. Sell what you build.";
-const pageDescription = "Discover AI agents, tools, prompts, skills, and services. Publish your own work for free or set a price.";
+const pageTitle = "Synthsynd World — Useful agents. Made by people.";
+const pageDescription = "Discover community-built AI agents, tools, prompts, and skills. Explore the marketplace or publish work of your own.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

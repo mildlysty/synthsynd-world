@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Provider, Session } from "@supabase/supabase-js";
 import { supabase } from "../../utils/supabase";
 
 export default function SignInPage() {
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
   const [error, setError] = useState("");
@@ -14,16 +16,19 @@ export default function SignInPage() {
   useEffect(() => {
     let mounted = true;
     supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setSession(data.session);
+      if (!mounted) return;
+      setSession(data.session);
+      if (data.session) router.replace("/dashboard");
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
+      if (nextSession) router.replace("/dashboard");
     });
     return () => {
       mounted = false;
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   async function signIn(provider: Provider) {
     setError("");
@@ -31,7 +36,7 @@ export default function SignInPage() {
     setLoadingProvider(provider);
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: new URL("/dashboard", window.location.origin).toString() },
     });
     if (authError) {
       if (provider === "x" && /provider|enabled|unsupported/i.test(authError.message)) {
