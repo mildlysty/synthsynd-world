@@ -18,7 +18,11 @@ function bytesToBase64(bytes: Uint8Array) {
 
 async function readJson(response: Response) {
   const result = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(typeof result?.error === 'string' ? result.error : 'Token launch request failed.');
+  if (!response.ok) {
+    const message = typeof result?.error === 'string' ? result.error : 'Token launch request failed.';
+    const details = typeof result?.details === 'string' ? result.details : '';
+    throw new Error(details ? `${message} ${details}` : message);
+  }
   return result;
 }
 

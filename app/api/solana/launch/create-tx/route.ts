@@ -47,7 +47,19 @@ export async function POST(request: Request) {
       body: JSON.stringify(requestBody), signal: AbortSignal.timeout(30_000),
     });
     const result = await response.json().catch(() => null);
-    if (!response.ok) return NextResponse.json({ error: "Jupiter Studio could not build a launch transaction.", details: typeof result?.error === "string" ? result.error : undefined }, { status: 502 });
+    if (!response.ok) {
+      const details = typeof result?.details === "string"
+        ? result.details
+        : typeof result?.error === "string"
+          ? result.error
+          : typeof result?.message === "string"
+            ? result.message
+            : typeof result?.errors === "object" && result.errors !== null
+              ? JSON.stringify(result.errors)
+              : `Jupiter Studio returned HTTP ${response.status} without an error description.`;
+      console.error("[jupiter-studio] create-tx rejected", { status: response.status, details: details.slice(0, 1000) });
+      return NextResponse.json({ error: "Jupiter Studio could not build a launch transaction.", details: details.slice(0, 1000) }, { status: 502 });
+    }
     if (typeof result?.transaction !== "string" || typeof result?.mint !== "string" || typeof result?.imagePresignedUrl !== "string" || typeof result?.metadataPresignedUrl !== "string" || typeof result?.imageUrl !== "string") return NextResponse.json({ error: "Jupiter Studio returned an incomplete launch response." }, { status: 502 });
     return NextResponse.json({ ...result, listingId, tokenSymbol, feeSelection, description: listing.description });
   } catch { return NextResponse.json({ error: "Could not reach Jupiter Studio." }, { status: 502 }); }
