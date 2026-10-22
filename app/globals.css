@@ -62,10 +62,20 @@ html { scroll-behavior: smooth; }
 }
 .landing-header { height: 76px; flex: 0 0 76px; border-bottom: 1px solid var(--landing-line); background: rgba(7, 9, 13, .82); backdrop-filter: blur(18px); }
 .landing-header-inner { width: min(1440px, 100%); height: 100%; margin: 0 auto; padding: 0 clamp(18px, 4vw, 64px); display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.landing-brand { display: inline-flex; align-items: center; gap: 11px; color: #f7f8fb; font-size: 17px; font-weight: 750; letter-spacing: -.04em; white-space: nowrap; }
-.landing-brand b { color: #a6a9b5; font-weight: 600; }
-.brand-mark { display: inline-grid; width: 38px; height: 38px; place-items: center; color: #d6c9ff; border: 1px solid rgba(179, 151, 255, .28); border-radius: 12px; background: linear-gradient(145deg, rgba(135, 93, 255, .18), rgba(62, 222, 235, .08)); box-shadow: 0 0 24px rgba(129, 92, 255, .12); }
-.brand-mark svg { width: 30px; height: 30px; }
+.landing-brand { display: inline-flex; flex: 0 0 auto; align-items: center; white-space: nowrap; }
+.brand-lockup { display: inline-flex; align-items: center; gap: 9px; color: #f7f8fc; }
+.brand-symbol { display: inline-grid; width: 42px; height: 42px; flex: 0 0 42px; place-items: center; }
+.brand-symbol svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.brand-orbit { transform-box: view-box; transform-origin: center; animation: brand-orbit 24s linear infinite; }
+.brand-orbit-two { animation-duration: 31s; animation-direction: reverse; }
+.brand-agents { transform-box: fill-box; transform-origin: center; animation: brand-agents 4.5s ease-in-out infinite; }
+.brand-type { display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.brand-word { display: flex; color: #fff; font-size: 19px; font-weight: 800; letter-spacing: -.065em; line-height: 1; }
+.brand-word-accent { color: #9b91ff; }
+.brand-world { padding-left: 2px; color: #dfe4f2; font-size: 9px; font-weight: 800; letter-spacing: .31em; line-height: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .brand-orbit, .brand-agents { animation: none !important; }
+}
 .landing-nav { display: flex; align-items: center; gap: clamp(18px, 3vw, 42px); margin-left: auto; margin-right: auto; color: #b5bac6; font-size: 14px; }
 .landing-nav a, .landing-footer a { transition: color 150ms ease; }
 .landing-nav a:hover, .landing-footer a:hover { color: white; }
@@ -114,8 +124,8 @@ html { scroll-behavior: smooth; }
 .art-grid { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px); background-size: 38px 38px; }
 .art-orbit { position: absolute; width: 220px; height: 220px; border: 1px solid rgba(168, 144, 255, .4); border-radius: 50%; transform: rotateX(68deg) rotate(-25deg); box-shadow: 0 0 46px rgba(149, 105, 255, .12); }
 .orbit-two { width: 330px; height: 330px; border-color: rgba(90, 218, 232, .17); transform: rotateX(68deg) rotate(38deg); }
-.art-core { position: relative; z-index: 1; display: grid; width: 82px; height: 82px; place-items: center; border: 1px solid rgba(203, 187, 255, .45); border-radius: 24px; background: linear-gradient(145deg, rgba(132, 94, 228, .36), rgba(56, 182, 207, .17)); color: #f4efff; font-size: 37px; font-weight: 800; box-shadow: 0 0 65px rgba(144, 107, 237, .35); transform: rotate(-8deg); }
-.art-core span { position: absolute; right: 7px; top: 5px; color: #77ecf0; font-size: 14px; }
+.art-core { position: relative; z-index: 1; display: grid; width: 92px; height: 92px; place-items: center; border: 1px solid rgba(203, 187, 255, .35); border-radius: 28px; background: linear-gradient(145deg, rgba(132, 94, 228, .18), rgba(56, 182, 207, .1)); box-shadow: 0 0 65px rgba(144, 107, 237, .35); transform: rotate(-8deg); }
+.art-core .brand-symbol { width: 84px; height: 84px; flex-basis: 84px; }
 .art-caption { position: absolute; bottom: 17px; color: rgba(219, 222, 241, .44); font-family: ui-monospace, monospace; font-size: 9px; letter-spacing: .22em; }
 .spotlight-info { padding: 17px 22px 19px; }
 .spotlight-title-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
@@ -127,7 +137,7 @@ html { scroll-behavior: smooth; }
 .spotlight-link:hover { border-color: rgba(194, 170, 255, .46); background: rgba(142, 111, 221, .1); }
 .spotlight-empty { min-height: 390px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 35px clamp(22px, 4vw, 44px); background: radial-gradient(ellipse at 74% 32%, rgba(106, 84, 190, .22), transparent 40%); }
 .empty-art { display: grid; width: 64px; height: 64px; place-items: center; margin-bottom: 27px; border: 1px solid rgba(186, 162, 255, .24); border-radius: 18px; background: rgba(144, 111, 229, .08); }
-.empty-art .brand-mark { width: 46px; height: 46px; border: 0; background: transparent; box-shadow: none; }
+.empty-art .brand-symbol { width: 48px; height: 48px; flex-basis: 48px; }
 .spotlight-empty h3 { margin-top: 10px; color: #f4f2fa; font-size: clamp(23px, 3vw, 32px); font-weight: 720; letter-spacing: -.045em; line-height: 1.15; }
 .spotlight-empty > p:not(.showcase-kicker) { max-width: 360px; margin-top: 11px; color: #a7adba; font-size: 13px; line-height: 1.6; }
 .spotlight-empty .spotlight-link { min-width: 180px; margin-top: 18px; }
@@ -145,6 +155,8 @@ html { scroll-behavior: smooth; }
 .terms-body h2 { margin-top: 30px; margin-bottom: 10px; color: #f5f7fc; font-size: 20px; font-weight: 700; line-height: 1.35; }
 .terms-body p { margin-top: 14px; white-space: pre-line; }
 @keyframes spotlight-fade { from { opacity: .5; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes brand-orbit { to { rotate: 360deg; } }
+@keyframes brand-agents { 0%, 100% { opacity: .82; } 50% { opacity: 1; filter: drop-shadow(0 0 3px rgba(136, 128, 255, .65)); } }
 
 @media (min-width: 1100px) and (min-height: 700px) {
   .landing-page { height: 100dvh; }
@@ -159,9 +171,10 @@ html { scroll-behavior: smooth; }
   .landing-page { overflow: visible; }
   .landing-header { height: 64px; flex-basis: 64px; }
   .landing-header-inner { gap: 10px; padding: 0 14px; }
-  .landing-brand { gap: 7px; font-size: 14px; }
-  .brand-mark { width: 32px; height: 32px; border-radius: 10px; }
-  .brand-mark svg { width: 26px; height: 26px; }
+  .brand-lockup { gap: 7px; }
+  .brand-symbol { width: 36px; height: 36px; flex-basis: 36px; }
+  .brand-word { font-size: 16px; }
+  .brand-world { font-size: 8px; }
   .landing-nav { display: none; }
   .landing-actions { gap: 7px; }
   .landing-signin { min-height: 38px; gap: 6px; padding: 0 11px; font-size: 12px; }

@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import WalletButton from './WalletButton';
+import BrandLogo from './BrandLogo';
 import { supabase } from '../../utils/supabase';
 
 export default function Sidebar() {
@@ -75,14 +76,14 @@ export default function Sidebar() {
     <>
     <div className="sticky top-0 z-50 border-b border-gray-800 bg-black lg:hidden">
       <div className="flex items-center justify-between p-4">
-        <Link href="/" className="flex items-center gap-2 font-bold tracking-tight text-white"><span className="grid h-8 w-8 place-items-center rounded-lg border border-purple-400/30 bg-purple-500/10 text-sm text-cyan-200">S✳</span><span>Synthsynd <span className="text-gray-400">World</span></span></Link>
+        <Link href="/" className="block" aria-label="Synthsynd World home"><BrandLogo /></Link>
         <button type="button" aria-expanded={mobileOpen} onClick={() => setMobileOpen((open) => !open)} className="rounded-lg border border-gray-700 px-3 py-2 text-sm">{mobileOpen ? 'Close' : 'Menu'}</button>
       </div>
       {mobileOpen && <nav className="grid max-h-[70vh] gap-1 overflow-y-auto border-t border-gray-800 p-3">{nav(true)}{session && <div className="space-y-3 border-t border-gray-800 p-3"><WalletButton /><button type="button" onClick={signOut} className="w-full rounded-lg border border-gray-700 px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-900">Sign out</button></div>}</nav>}
     </div>
     <aside className="fixed left-0 top-0 z-40 hidden h-dvh w-64 flex-col border-r border-gray-800 bg-black lg:flex">
       <div className="p-6">
-        <Link href="/" className="flex items-center gap-3 text-xl font-bold tracking-tight text-white"><span className="grid h-10 w-10 place-items-center rounded-xl border border-purple-400/30 bg-purple-500/10 text-cyan-200">S✳</span><span>Synthsynd <span className="text-gray-400">World</span></span></Link>
+        <Link href="/" className="block" aria-label="Synthsynd World home"><BrandLogo /></Link>
       </div>
       <nav className="flex-1 space-y-2 overflow-y-auto px-4">{nav()}</nav>
       <div className="space-y-3 border-t border-gray-800 p-4">

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Synthsynd swarm token emblem</title>
+  <desc id="desc">A clean faceted core surrounded by three orbital paths and four agent lights. No lettering.</desc>
+  <defs>
+    <linearGradient id="orbit" x1="25" y1="22" x2="231" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#72F1E1"/>
+      <stop offset=".52" stop-color="#7C8EFF"/>
+      <stop offset="1" stop-color="#D879F0"/>
+    </linearGradient>
+    <linearGradient id="gem" x1="74" y1="61" x2="183" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D9FFFB"/>
+      <stop offset=".48" stop-color="#9B91FF"/>
+      <stop offset="1" stop-color="#D77CEF"/>
+    </linearGradient>
+    <radialGradient id="aura">
+      <stop stop-color="#7566FF" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#7566FF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+  </defs>
+
+  <circle cx="128" cy="128" r="116" fill="#0B0D14" stroke="#292D3D" stroke-width="3"/>
+  <circle cx="128" cy="120" r="108" fill="url(#aura)"/>
+
+  <g fill="none" stroke-linecap="round">
+    <ellipse cx="128" cy="120" rx="88" ry="35" transform="rotate(-32 128 120)"
+      stroke="#6DECE2" stroke-opacity=".78" stroke-width="3.8"/>
+    <ellipse cx="128" cy="120" rx="76" ry="29" transform="rotate(48 128 120)"
+      stroke="#A28BFF" stroke-opacity=".82" stroke-width="3"/>
+    <path d="M45 166c27-7 44-31 66-43 29-16 51-14 80-52"
+      stroke="#D77CEF" stroke-opacity=".72" stroke-width="3"/>
+  </g>
+
+  <path d="m128 53 51 30v59l-51 30-51-30V83Z" fill="url(#gem)" opacity=".28" filter="url(#soft-glow)"/>
+  <path d="m128 57 48 28v56l-48 28-48-28V85Z" fill="#11131D" stroke="url(#orbit)" stroke-width="4" stroke-linejoin="round"/>
+  <path d="m128 72 33 19v44l-33 19-33-19V91Z" fill="url(#gem)" stroke="#E7FFFF" stroke-opacity=".78" stroke-width="2"/>
+  <path d="M128 72v82M95 91l66 44m0-44-66 44" fill="none" stroke="#F6FFFF" stroke-opacity=".64" stroke-width="2.4"/>
+
+  <g stroke="#0B0D14" stroke-width="4">
+    <circle cx="48" cy="72" r="10" fill="#72F1E1"/>
+    <circle cx="210" cy="59" r="10" fill="#A28BFF"/>
+    <circle cx="204" cy="178" r="10" fill="#D879F0"/>
+    <circle cx="64" cy="197" r="8" fill="#DDEBFF"/>
+  </g>
+</svg>
+

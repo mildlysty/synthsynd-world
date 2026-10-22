@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../utils/supabase';
+import BrandLogo, { BrandSymbol } from './BrandLogo';
 
 type Agent = {
   id: string;
@@ -18,21 +19,6 @@ type Agent = {
 
 function agentUrl(id: string) {
   return `/agent/${encodeURIComponent(id)}`;
-}
-
-function BrandMark() {
-  return (
-    <span className="brand-mark" aria-hidden="true">
-      <svg viewBox="0 0 40 40" fill="none">
-        <path d="M11 12.5 20 8l9 4.5v15L20 32l-9-4.5v-15Z" stroke="currentColor" strokeWidth="1.5" />
-        <path d="m11.5 13 8.5 4.5 8.5-4.5M20 18v13" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="20" cy="8" r="2.3" fill="#72f5ff" />
-        <circle cx="11" cy="12.5" r="2.3" fill="#a98aff" />
-        <circle cx="29" cy="12.5" r="2.3" fill="#ff63cf" />
-        <circle cx="20" cy="32" r="2.3" fill="#72f5ff" />
-      </svg>
-    </span>
-  );
 }
 
 export default function LandingPage() {
@@ -116,8 +102,7 @@ export default function LandingPage() {
       <header className="landing-header">
         <div className="landing-header-inner">
           <Link href="/" className="landing-brand" aria-label="Synthsynd World home">
-            <BrandMark />
-            <span>Synthsynd <b>World</b></span>
+            <BrandLogo />
           </Link>
           <nav className="landing-nav" aria-label="Main navigation">
             <Link href="/marketplace">Explore</Link>
@@ -163,7 +148,7 @@ export default function LandingPage() {
             {current ? (
               <article className="spotlight-card" aria-live="polite">
                 <div className={`spotlight-art ${current.image_url ? 'has-image' : ''}`}>
-                  {current.image_url ? <img src={current.image_url} alt={`${current.name} listing artwork`} /> : <div className="art-grid" aria-hidden="true"><span className="art-orbit orbit-one" /><span className="art-orbit orbit-two" /><span className="art-core">S<span>✳</span></span><span className="art-caption">SYNTHSYND / AGENT</span></div>}
+                  {current.image_url ? <img src={current.image_url} alt={`${current.name} listing artwork`} /> : <div className="art-grid" aria-hidden="true"><span className="art-orbit orbit-one" /><span className="art-orbit orbit-two" /><span className="art-core"><BrandSymbol /></span><span className="art-caption">SYNTHSYND / AGENT</span></div>}
                   <span className="spotlight-count">{String(active + 1).padStart(2, '0')} <i /> {String(agents.length).padStart(2, '0')}</span>
                   <span className="spotlight-category">{current.category || 'AI AGENT'}</span>
                 </div>
@@ -175,7 +160,7 @@ export default function LandingPage() {
               </article>
             ) : (
               <div className="spotlight-empty" aria-live="polite" aria-busy={loadingAgents}>
-                <div className="empty-art"><BrandMark /></div>
+                <div className="empty-art"><BrandSymbol /></div>
                 <p className="showcase-kicker">{loadingAgents ? 'LOADING LIVE LISTINGS' : 'THE COMMUNITY IS BUILDING'}</p>
                 <h3>{loadingAgents ? <>Finding the latest<br />community agents.</> : <>Built by the community.<br />Ready for what’s next.</>}</h3>
                 <p>{loadingAgents ? 'Loading published agents from the marketplace…' : 'Newly published agents will appear here, one at a time.'}</p>
