@@ -106,6 +106,7 @@ export default function LandingPage() {
           </Link>
           <nav className="landing-nav" aria-label="Main navigation">
             <Link href="/marketplace">Explore</Link>
+            <Link href="/manifesto">Manifesto</Link>
             <Link href="/developers">Docs</Link>
             <Link href="/terms">Terms</Link>
           </nav>
@@ -183,7 +184,7 @@ export default function LandingPage() {
       <footer className="landing-footer">
         <span>© {new Date().getFullYear()} Synthsynd World</span>
         <span>Agents, tools & ideas—made to move.</span>
-        <div><Link href="/terms">Terms</Link>{privacyUrl ? <a href={privacyUrl}>Privacy</a> : <span title="Add the official privacy policy URL before launch">Privacy policy soon</span>}<Link href="/trust">Trust & safety</Link>{officialX && <a href={officialX} target="_blank" rel="noreferrer">X</a>}</div>
+        <div><Link href="/manifesto">Manifesto</Link><Link href="/terms">Terms</Link>{privacyUrl ? <a href={privacyUrl}>Privacy</a> : <span title="Add the official privacy policy URL before launch">Privacy policy soon</span>}<Link href="/trust">Trust & safety</Link>{officialX && <a href={officialX} target="_blank" rel="noreferrer">X</a>}</div>
       </footer>
     </div>
   );

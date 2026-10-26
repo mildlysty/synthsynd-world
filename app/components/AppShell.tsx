@@ -5,12 +5,16 @@ import Sidebar from './Sidebar';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLandingPage = pathname === '/';
+  const isLandingPage = pathname === '/' || pathname === '/manifesto';
 
   return (
     <div className="flex min-h-screen">
       {!isLandingPage && <Sidebar />}
-      <main className={`min-w-0 flex-1 ${isLandingPage ? '' : 'ml-0 lg:ml-64'}`}>{children}</main>
+      {isLandingPage ? (
+        <div className="min-w-0 flex-1">{children}</div>
+      ) : (
+        <main className="ml-0 min-w-0 flex-1 lg:ml-64">{children}</main>
+      )}
     </div>
   );
 }
