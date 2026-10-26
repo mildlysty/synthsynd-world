@@ -29,8 +29,8 @@ export default function LandingPage() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [copied, setCopied] = useState(false);
   const officialX = process.env.NEXT_PUBLIC_X_URL?.trim() || '';
-  const ca = process.env.NEXT_PUBLIC_SSDY_CA?.trim() || '';
-  const pumpFunUrl = process.env.NEXT_PUBLIC_SSDY_PUMPFUN_URL?.trim() || '';
+  const ca = process.env.NEXT_PUBLIC_SSDY_CA?.trim() || '5kkYSNkWgn6DCkTkPRbKKEZtmzVzVWXSR9R9PK5Ppump';
+  const pumpFunUrl = process.env.NEXT_PUBLIC_SSDY_PUMPFUN_URL?.trim() || 'https://pump.fun/coin/5kkYSNkWgn6DCkTkPRbKKEZtmzVzVWXSR9R9PK5Ppump';
   const privacyUrl = process.env.NEXT_PUBLIC_PRIVACY_URL?.trim() || '';
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function LandingPage() {
           <div className="landing-actions">
             {ca ? (
               <div className="token-actions">
-                <button className="token-address" type="button" onClick={copyAddress} title="Copy $SSDY contract address">
+                <button className="token-address" type="button" onClick={copyAddress} title="Copy $SSDY contract address" aria-label={`Copy $SSDY contract address ${ca}`}>
                   <span className="token-live-dot" /> CA <code>{copied ? 'Copied' : shortenedCa}</code>
                 </button>
                 {pumpFunUrl && <a className="token-buy" href={pumpFunUrl} target="_blank" rel="noreferrer">Buy $SSDY ↗</a>}
