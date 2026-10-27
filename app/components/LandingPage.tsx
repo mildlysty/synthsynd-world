@@ -26,6 +26,7 @@ export default function LandingPage() {
   const [loadingAgents, setLoadingAgents] = useState(true);
   const [agentsFailed, setAgentsFailed] = useState(false);
   const [reloadAgents, setReloadAgents] = useState(0);
+  const [listingCount, setListingCount] = useState<number | null>(null);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -34,6 +35,22 @@ export default function LandingPage() {
   const ca = process.env.NEXT_PUBLIC_SSDY_CA?.trim() || '5kkYSNkWgn6DCkTkPRbKKEZtmzVzVWXSR9R9PK5Ppump';
   const pumpFunUrl = process.env.NEXT_PUBLIC_SSDY_PUMPFUN_URL?.trim() || 'https://pump.fun/coin/5kkYSNkWgn6DCkTkPRbKKEZtmzVzVWXSR9R9PK5Ppump';
   const privacyUrl = process.env.NEXT_PUBLIC_PRIVACY_URL?.trim() || '';
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/v1/items?limit=1&type=all', { signal: controller.signal, cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const body = await response.json();
+        if (typeof body.count === 'number' && Number.isFinite(body.count) && !controller.signal.aborted) {
+          setListingCount(body.count);
+        }
+      })
+      .catch(() => {
+        // Keep the general community message if the optional count is unavailable.
+      });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -155,7 +172,7 @@ export default function LandingPage() {
               <Link href="/create" className="landing-secondary">Publish your work <span aria-hidden="true">↗</span></Link>
             </div>
             <p className="landing-microcopy"><span aria-hidden="true">✓</span> Sign in with Google or X. No wallet needed to explore.</p>
-            <div className="landing-proof"><span className="proof-pulse" /> COMMUNITY BUILT <i /> OPEN TO EVERY BUILDER</div>
+            <div className="landing-proof"><span className="proof-pulse" /> {listingCount === null ? 'COMMUNITY BUILT' : `${listingCount.toLocaleString()} PUBLISHED LISTINGS`} <i /> OPEN TO EVERY BUILDER</div>
           </div>
 
           <div className="agent-showcase" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false); }}>
