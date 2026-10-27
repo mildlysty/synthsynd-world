@@ -53,12 +53,12 @@ export default function CreateBundlePage() {
     router.push(`/bundle/${bundleId}`);
   }
 
-  if (loading) return <main className="p-10 text-zinc-400">Loading account…</main>;
-  if (!ownerId) return <main className="p-10 text-center text-zinc-100"><h1 className="text-3xl font-bold">Create a bundle</h1><p className="mt-3 text-zinc-400">Sign in before publishing a bundle.</p><Link href="/signin" className="mt-5 inline-block rounded-lg bg-purple-600 px-4 py-2">Sign in</Link></main>;
+  if (loading) return <main className="p-4 py-6 text-zinc-400 sm:p-10">Loading account…</main>;
+  if (!ownerId) return <main className="p-4 py-6 text-center text-zinc-100 sm:p-10"><h1 className="text-3xl font-bold">Create a bundle</h1><p className="mt-3 text-zinc-400">Sign in before publishing a bundle.</p><Link href="/signin" className="mt-5 inline-block rounded-lg bg-purple-600 px-4 py-2">Sign in</Link></main>;
 
-  return <main className="min-h-screen px-5 py-10 text-zinc-100 sm:px-8"><div className="mx-auto max-w-3xl"><Link href="/platform/registry" className="text-sm text-purple-300">← Registry</Link><h1 className="mt-5 text-4xl font-bold">Create a bundle</h1><p className="mt-3 text-zinc-400">Package your published listings together. Paid bundle checkout requires payment setup.</p>
+  return <main className="min-h-screen px-4 py-6 text-zinc-100 sm:px-8 sm:py-10"><div className="mx-auto max-w-3xl"><Link href="/platform/registry" className="text-sm text-purple-300">← Registry</Link><h1 className="mt-5 text-4xl font-bold">Create a bundle</h1><p className="mt-3 text-zinc-400">Package your published listings together. Paid bundle checkout requires payment setup.</p>
     {error&&<p role="alert" className="mt-5 rounded-xl border border-rose-900 bg-rose-950/30 p-4 text-sm text-rose-200">{error}</p>}
-    <form onSubmit={create} className="mt-7 space-y-5 rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
+    <form onSubmit={create} className="mt-7 space-y-5 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 sm:p-6">
       <label className="block text-sm text-zinc-400">Bundle name<input required minLength={2} maxLength={120} value={name} onChange={(e)=>setName(e.target.value)} className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white" /></label>
       <label className="block text-sm text-zinc-400">Description<textarea value={description} onChange={(e)=>setDescription(e.target.value)} maxLength={5000} rows={4} className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white" /></label>
       <label className="block text-sm text-zinc-400">Image URL<input type="url" value={imageUrl} onChange={(e)=>setImageUrl(e.target.value)} className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white" /></label>

@@ -85,6 +85,7 @@ html { scroll-behavior: smooth; }
 .token-soon, .token-address { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(167, 146, 255, .22); border-radius: 999px; background: rgba(131, 103, 222, .08); padding: 9px 12px; color: #c8c4d9; font-size: 12px; white-space: nowrap; }
 .token-soon b { color: #e5dcff; font-weight: 600; }
 .token-address { cursor: pointer; font-family: inherit; }
+.token-ca-compact { display: none; }
 .token-address code { color: #f1ecff; font-size: 12px; }
 .token-live-dot, .proof-pulse { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #b99bff; box-shadow: 0 0 12px rgba(185, 155, 255, .9); }
 .token-actions { display: flex; align-items: center; gap: 6px; }
@@ -204,7 +205,37 @@ html { scroll-behavior: smooth; }
   .spotlight-empty { min-height: 300px; padding: 24px; }
   .landing-footer { min-height: 58px; flex-basis: auto; flex-wrap: wrap; padding: 13px 18px; font-size: 10px; }
   .landing-footer > span:nth-child(2) { display: none; }
-  .landing-footer > div { gap: 12px; }
+  .landing-footer > div { flex-wrap: wrap; gap: 8px 14px; }
+}
+@media (max-width: 480px) {
+  .landing-header-inner { gap: 8px; padding: 0 12px; }
+  .landing-actions { gap: 7px; }
+  .token-buy { display: none; }
+  .token-actions { gap: 0; }
+  .token-address { gap: 5px; padding: 7px 8px; }
+  .token-ca-full { display: none; }
+  .token-ca-compact { display: inline; font-size: 10px; }
+  .landing-signin { min-height: 38px; padding: 0 10px; }
+  .landing-hero { padding: 34px 16px 22px; }
+  .landing-copy h1 { font-size: clamp(42px, 11.5vw, 52px); }
+  .landing-ctas { display: grid; grid-template-columns: 1fr; gap: 9px; }
+  .landing-primary, .landing-secondary { width: 100%; min-height: 48px; font-size: 14px; }
+  .landing-microcopy { align-items: flex-start; font-size: 12px; line-height: 1.5; }
+  .landing-proof { flex-wrap: wrap; font-size: 9px; }
+  .agent-showcase { min-width: 0; }
+  .spotlight-title-row { align-items: flex-start; }
+  .spotlight-info h3 { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .showcase-note { font-size: 7px; }
+  .showcase-controls { margin-left: 7px; }
+}
+@media (max-width: 360px) {
+  .landing-brand .brand-symbol { width: 32px; height: 32px; flex-basis: 32px; }
+  .landing-brand .brand-lockup { gap: 5px; }
+  .landing-brand .brand-word { font-size: 14px; }
+  .landing-brand .brand-world { font-size: 7px; }
+  .landing-header-inner { padding-inline: 9px; }
+  .landing-actions { gap: 5px; }
+  .landing-signin { padding-inline: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .spotlight-card { animation: none; }

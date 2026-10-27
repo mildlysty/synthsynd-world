@@ -87,10 +87,10 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-black text-white p-10 flex justify-center">Loading...</div>;
+  if (loading) return <div className="min-h-screen bg-black px-4 py-6 text-white flex justify-center sm:p-10">Loading...</div>;
 
   return (
-    <main className="min-h-screen bg-black text-white font-sans p-10">
+    <main className="min-h-screen bg-black px-4 py-6 font-sans text-white sm:p-10">
       <div className="max-w-2xl mx-auto">
         <Link href="/profile" className="text-purple-400 mb-8 inline-block hover:underline">
           &larr; Back to Dashboard

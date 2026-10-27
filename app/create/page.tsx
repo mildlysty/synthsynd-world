@@ -57,11 +57,11 @@ export default function Create() {
   };
 
   return (
-    <div className="p-10 max-w-2xl mx-auto">
+    <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:p-10">
       <h1 className="text-3xl font-bold mb-8">Publish</h1>
       {!session && <p className="mb-5 rounded-xl border border-amber-900 bg-amber-950/30 p-4 text-sm text-amber-200">Sign in to publish a listing. A wallet is optional unless you later launch a token. <Link href="/signin" className="underline">Sign in with Google or X</Link>.</p>}
       {error && <p role="alert" className="mb-5 rounded-xl border border-rose-900 bg-rose-950/30 p-4 text-sm text-rose-200">{error}</p>}
-      <form onSubmit={submit} className="space-y-4 bg-gray-900 p-8 rounded-2xl border border-gray-800">
+      <form onSubmit={submit} className="space-y-4 rounded-2xl border border-gray-800 bg-gray-900 p-4 sm:p-8">
         <input required placeholder="Name" value={form.name} className="w-full p-3 bg-black border border-gray-700 rounded-lg" onChange={e => setForm({...form, name: e.target.value})} />
         <textarea required placeholder="Description" value={form.desc} className="w-full p-3 bg-black border border-gray-700 rounded-lg" onChange={e => setForm({...form, desc: e.target.value})} />
         <input type="url" placeholder="Image URL" value={form.img} className="w-full p-3 bg-black border border-gray-700 rounded-lg" onChange={e => setForm({...form, img: e.target.value})} />

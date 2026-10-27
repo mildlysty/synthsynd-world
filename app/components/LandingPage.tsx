@@ -132,7 +132,7 @@ export default function LandingPage() {
             {ca ? (
               <div className="token-actions">
                 <button className="token-address" type="button" onClick={copyAddress} title="Copy $SSDY contract address" aria-label={`Copy $SSDY contract address ${ca}`}>
-                  <span className="token-live-dot" /> CA <code>{copied ? 'Copied' : shortenedCa}</code>
+                  <span className="token-live-dot" /><span className="token-ca-label">CA</span><code className="token-ca-full">{copied ? 'Copied' : shortenedCa}</code><code className="token-ca-compact">{copied ? 'Copied' : `${ca.slice(0, 4)}…`}</code>
                 </button>
                 {pumpFunUrl && <a className="token-buy" href={pumpFunUrl} target="_blank" rel="noreferrer">Buy $SSDY ↗</a>}
               </div>

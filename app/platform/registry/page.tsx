@@ -49,15 +49,15 @@ export default function RegistryPage() {
   function chooseType(nextType: string) { setType(nextType); setPage(0); }
 
   return (
-    <main className="min-h-screen px-5 py-10 text-zinc-100 sm:px-8">
+    <main className="min-h-screen px-4 py-6 text-zinc-100 sm:px-8 sm:py-10">
       <div className="mx-auto max-w-7xl">
-        <header className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-purple-950/40 via-zinc-950 to-cyan-950/20 p-7 sm:p-10">
+        <header className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-purple-950/40 via-zinc-950 to-cyan-950/20 p-5 sm:rounded-3xl sm:p-10">
           <p className="text-sm font-medium text-cyan-300">The agent registry</p>
           <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">Find your next building block.</h1>
           <p className="mt-3 max-w-2xl text-zinc-400">Discover community-published agents, prompts, tools, skills, MCP services, and bundles.</p>
           <form onSubmit={(event) => { event.preventDefault(); setQuery(search.trim()); setPage(0); }} className="mt-7 flex max-w-3xl gap-2">
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name or description" className="min-w-0 flex-1 rounded-xl border border-zinc-700 bg-black/70 px-4 py-3 outline-none focus:border-purple-500" />
-            <button className="rounded-xl bg-purple-600 px-5 py-3 font-semibold">Search</button>
+            <button className="shrink-0 rounded-xl bg-purple-600 px-4 py-3 font-semibold sm:px-5">Search</button>
           </form>
           <a href="/bundle/create" className="mt-4 inline-flex text-sm text-purple-300 hover:text-purple-200">Create a bundle →</a>
         </header>
@@ -66,8 +66,8 @@ export default function RegistryPage() {
           {filters.map((filter) => <button key={filter.value} onClick={() => chooseType(filter.value)} aria-pressed={type === filter.value} className={`rounded-full border px-4 py-2 text-sm ${type === filter.value ? "border-cyan-400 bg-cyan-400/10 text-cyan-100" : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white"}`}>{filter.label}</button>)}
         </div>
         <div className="mt-4 flex flex-wrap gap-3">
-          <label className="text-xs text-zinc-500">Industry/category<select value={category} onChange={(event)=>{setCategory(event.target.value);setPage(0);}} className="ml-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-200"><option value="">All categories</option>{categories.map((item)=><option key={item} value={item}>{item}</option>)}</select></label>
-          <label className="text-xs text-zinc-500">Pricing<select value={pricing} onChange={(event)=>{setPricing(event.target.value);setPage(0);}} className="ml-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-200"><option value="all">All prices</option><option value="free">Free</option><option value="paid">Paid</option></select></label>
+          <label className="block text-xs text-zinc-500">Industry/category<select value={category} onChange={(event)=>{setCategory(event.target.value);setPage(0);}} className="mt-1 block w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 sm:ml-2 sm:mt-0 sm:inline-block sm:w-auto"><option value="">All categories</option>{categories.map((item)=><option key={item} value={item}>{item}</option>)}</select></label>
+          <label className="block text-xs text-zinc-500">Pricing<select value={pricing} onChange={(event)=>{setPricing(event.target.value);setPage(0);}} className="mt-1 block w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 sm:ml-2 sm:mt-0 sm:inline-block sm:w-auto"><option value="all">All prices</option><option value="free">Free</option><option value="paid">Paid</option></select></label>
         </div>
 
         <div className="mt-6 flex items-center justify-between text-sm text-zinc-500"><span>{loading ? "Loading listings…" : `${total.toLocaleString()} listings`}</span><span>Page {page + 1}</span></div>
