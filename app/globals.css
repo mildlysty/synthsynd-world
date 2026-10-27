@@ -141,6 +141,9 @@ html { scroll-behavior: smooth; }
 .spotlight-empty h3 { margin-top: 10px; color: #f4f2fa; font-size: clamp(23px, 3vw, 32px); font-weight: 720; letter-spacing: -.045em; line-height: 1.15; }
 .spotlight-empty > p:not(.showcase-kicker) { max-width: 360px; margin-top: 11px; color: #a7adba; font-size: 13px; line-height: 1.6; }
 .spotlight-empty .spotlight-link { min-width: 180px; margin-top: 18px; }
+.spotlight-fallback-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.spotlight-retry { margin-top: 18px; background: transparent; cursor: pointer; font: inherit; }
+.spotlight-retry:focus-visible { outline: 2px solid #c2aaff; outline-offset: 3px; }
 .showcase-footer { min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 21px; border-top: 1px solid rgba(223, 229, 245, .09); }
 .showcase-dots { display: flex; align-items: center; gap: 6px; }
 .showcase-dots button { width: 7px; height: 7px; border: 0; border-radius: 99px; padding: 0; background: #424653; cursor: pointer; transition: width 180ms ease, background 180ms ease; }

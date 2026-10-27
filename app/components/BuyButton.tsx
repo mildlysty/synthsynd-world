@@ -24,7 +24,7 @@ export default function BuyButton({ listingId, bundleId, price, isFree }: { list
   }
   return (
     <>
-      {isFree ? <a href="#listing-content" className="block w-full rounded-xl border border-emerald-800 bg-emerald-950/30 py-3 text-center font-semibold text-emerald-300 hover:bg-emerald-950/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300">View free content ↓</a> : <button onClick={checkout} disabled={busy} className="w-full rounded-xl bg-purple-600 py-3 font-bold disabled:opacity-50">{busy ? 'Opening checkout…' : `Buy for $${Number(price || 0).toFixed(2)}`}</button>}
+      {isFree ? <a href="#listing-content" className="block w-full rounded-xl border border-emerald-800 bg-emerald-950/30 py-3 text-center font-semibold text-emerald-300 hover:bg-emerald-950/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300">Check free content ↓</a> : <button onClick={checkout} disabled={busy} className="w-full rounded-xl bg-purple-600 py-3 font-bold disabled:opacity-50">{busy ? 'Opening checkout…' : `Buy for $${Number(price || 0).toFixed(2)}`}</button>}
       {error && <p role="alert" className="mt-3 text-sm text-rose-300">{error}</p>}
     </>
   );

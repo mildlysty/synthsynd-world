@@ -24,6 +24,8 @@ function agentUrl(id: string) {
 export default function LandingPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loadingAgents, setLoadingAgents] = useState(true);
+  const [agentsFailed, setAgentsFailed] = useState(false);
+  const [reloadAgents, setReloadAgents] = useState(0);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -43,35 +45,51 @@ export default function LandingPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/api/v1/items?limit=100&type=agent', { signal: controller.signal, cache: 'no-store' })
-      .then((response) => {
+    let cancelled = false;
+    const timeout = window.setTimeout(() => controller.abort(), 8000);
+    setLoadingAgents(true);
+    setAgentsFailed(false);
+
+    async function loadAgents() {
+      try {
+        const response = await fetch('/api/v1/items?limit=100&type=agent', { signal: controller.signal, cache: 'no-store' });
         if (!response.ok) throw new Error('Could not load agents');
-        return response.json();
-      })
-      .then((body) => {
+        const body = await response.json();
         const rows = (Array.isArray(body.items) ? body.items : []).slice(0, 10) as Agent[];
+        if (cancelled) return;
+
+        // Render listings immediately; creator profiles are optional enrichment.
+        setAgents(rows);
+        setLoadingAgents(false);
+        window.clearTimeout(timeout);
+
         const ownerIds = [...new Set(rows.map((agent) => agent.owner_id).filter((id): id is string => Boolean(id)))];
-        if (!ownerIds.length) {
-          setAgents(rows);
-          setLoadingAgents(false);
-          return;
-        }
-        return supabase.from('marketplace_profiles').select('owner_id,username,display_name').in('owner_id', ownerIds)
+        if (!ownerIds.length) return;
+        void Promise.resolve(supabase.from('marketplace_profiles').select('owner_id,username,display_name').in('owner_id', ownerIds)
           .then(({ data }) => {
-            if (controller.signal.aborted) return;
-            const names = new Map((data ?? []).map((profile) => [profile.owner_id, profile.display_name || (profile.username ? `@${profile.username}` : 'Community creator')]));
+            if (cancelled || !data) return;
+            const names = new Map(data.map((profile) => [profile.owner_id, profile.display_name || (profile.username ? `@${profile.username}` : 'Community creator')]));
             setAgents(rows.map((agent) => ({ ...agent, creatorName: agent.owner_id ? names.get(agent.owner_id) || 'Community creator' : 'Community creator' })));
-            setLoadingAgents(false);
+          })
+          ).catch(() => {
+            // Creator names are decorative; keep loaded listings visible.
           });
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
+      } catch {
+        if (!cancelled) {
           setAgents([]);
+          setAgentsFailed(true);
           setLoadingAgents(false);
         }
-      });
-    return () => controller.abort();
-  }, []);
+      }
+    }
+
+    void loadAgents();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [reloadAgents]);
 
   useEffect(() => {
     if (paused || reducedMotion || agents.length < 2) return;
@@ -162,10 +180,10 @@ export default function LandingPage() {
             ) : (
               <div className="spotlight-empty" aria-live="polite" aria-busy={loadingAgents}>
                 <div className="empty-art"><BrandSymbol /></div>
-                <p className="showcase-kicker">{loadingAgents ? 'LOADING LIVE LISTINGS' : 'THE COMMUNITY IS BUILDING'}</p>
-                <h3>{loadingAgents ? <>Finding the latest<br />community agents.</> : <>Built by the community.<br />Ready for what’s next.</>}</h3>
-                <p>{loadingAgents ? 'Loading published agents from the marketplace…' : 'Newly published agents will appear here, one at a time.'}</p>
-                {!loadingAgents && <Link href="/marketplace?type=agent" className="spotlight-link">Browse agents <span aria-hidden="true">→</span></Link>}
+                <p className="showcase-kicker">{loadingAgents ? 'LOADING LIVE LISTINGS' : agentsFailed ? 'SPOTLIGHT TEMPORARILY UNAVAILABLE' : 'THE COMMUNITY IS BUILDING'}</p>
+                <h3>{loadingAgents ? <>Finding the latest<br />community agents.</> : agentsFailed ? <>The spotlight is<br />taking a break.</> : <>No agents featured<br />just yet.</>}</h3>
+                <p>{loadingAgents ? 'Loading published agents from the marketplace…' : agentsFailed ? 'The marketplace is still available while we reconnect the spotlight.' : 'Browse the marketplace to discover community agents.'}</p>
+                {!loadingAgents && <div className="spotlight-fallback-actions"><Link href="/marketplace?type=agent" className="spotlight-link">Browse agents <span aria-hidden="true">→</span></Link>{agentsFailed && <button type="button" className="spotlight-link spotlight-retry" onClick={() => setReloadAgents((attempt) => attempt + 1)}>Try again</button>}</div>}
               </div>
             )}
 
