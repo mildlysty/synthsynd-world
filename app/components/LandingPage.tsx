@@ -144,10 +144,10 @@ export default function LandingPage() {
             <Link href="/manifesto">Manifesto</Link>
             <Link href="/developers">Docs</Link>
             <Link href="/terms">Terms</Link>
-            <Link href="/synthsyndpad">SynthsyndPad</Link>
+            <Link href="/workflows">Workflows</Link>
           </nav>
           <div className="landing-actions">
-            <Link href="/synthsyndpad" className="landing-pad-mobile">Pad</Link>
+            <Link href="/workflows" className="landing-pad-mobile">Workflows</Link>
             {ca ? (
               <div className="token-actions">
                 <button className="token-address" type="button" onClick={copyAddress} title="Copy $SSDY contract address" aria-label={`Copy $SSDY contract address ${ca}`}>

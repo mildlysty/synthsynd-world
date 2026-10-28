@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import SynthsyndPad from '../components/SynthsyndPad';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'SynthsyndPad — Launch a token for your listing',
-  description: 'Prepare a token launch for a Synthsynd World listing and review the transaction in your own Solana wallet.',
+  title: 'Workflows — Synthsynd World',
+  description: 'Build and share a practical workflow from community agents, prompts, tools, and skills.',
 };
 
 export default function SynthsyndPadPage() {
-  return <SynthsyndPad />;
+  redirect('/workflows');
 }
