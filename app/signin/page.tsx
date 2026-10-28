@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import type { Provider, Session } from "@supabase/supabase-js";
 import { supabase } from "../../utils/supabase";
 
+function getSafeReturnPath() {
+  const requested = new URLSearchParams(window.location.search).get("next");
+  return requested && requested.startsWith("/") && !requested.startsWith("//") && !requested.includes("\\") ? requested : "/dashboard";
+}
 export default function SignInPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
@@ -15,14 +19,15 @@ export default function SignInPage() {
 
   useEffect(() => {
     let mounted = true;
+    const returnPath = getSafeReturnPath();
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setSession(data.session);
-      if (data.session) router.replace("/dashboard");
+      if (data.session) router.replace(returnPath);
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      if (nextSession) router.replace("/dashboard");
+      if (nextSession) router.replace(returnPath);
     });
     return () => {
       mounted = false;
@@ -36,7 +41,7 @@ export default function SignInPage() {
     setLoadingProvider(provider);
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: new URL("/dashboard", window.location.origin).toString() },
+      options: { redirectTo: new URL(getSafeReturnPath(), window.location.origin).toString() },
     });
     if (authError) {
       if (provider === "x" && /provider|enabled|unsupported/i.test(authError.message)) {

@@ -29,6 +29,7 @@ export default function Sidebar() {
     { name: 'Screener', href: '/screener', icon: '📈' },
     { name: 'Leaderboard', href: '/leaderboard', icon: '🏆' },
     { name: 'Competitions', href: '/competitions', icon: '🎯' },
+    { name: 'SynthsyndPad', href: '/synthsyndpad', icon: '🪙' },
     { name: 'MCP Servers', href: '/mcp-servers', icon: '🔌' },
     { name: 'x402 Bazaar', href: '/x402-bazaar', icon: '⚡' },
     { name: 'API Keys', href: '/api-keys', icon: '🔑' },

@@ -80,6 +80,7 @@ html { scroll-behavior: smooth; }
 .landing-nav a, .landing-footer a { transition: color 150ms ease; }
 .landing-nav a:hover, .landing-footer a:hover { color: white; }
 .landing-actions { display: flex; align-items: center; justify-content: flex-end; gap: 14px; }
+.landing-pad-mobile { display: none; }
 .landing-signin { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 42px; padding: 0 17px; border: 1px solid rgba(211, 218, 233, .22); border-radius: 10px; background: #f5f6fa; color: #0c0d11; font-size: 14px; font-weight: 750; white-space: nowrap; transition: transform 160ms ease, background 160ms ease; }
 .landing-signin:hover { transform: translateY(-1px); background: white; }
 .token-soon, .token-address { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(167, 146, 255, .22); border-radius: 999px; background: rgba(131, 103, 222, .08); padding: 9px 12px; color: #c8c4d9; font-size: 12px; white-space: nowrap; }
@@ -181,6 +182,7 @@ html { scroll-behavior: smooth; }
   .brand-world { font-size: 8px; }
   .landing-nav { display: none; }
   .landing-actions { gap: 7px; }
+  .landing-pad-mobile { display: inline-flex; align-items: center; color: #d8ceff; font-size: 12px; font-weight: 700; }
   .landing-signin { min-height: 38px; gap: 6px; padding: 0 11px; font-size: 12px; }
   .token-soon, .token-address { gap: 6px; padding: 7px 8px; font-size: 10px; }
   .token-soon b { max-width: 65px; overflow: hidden; text-overflow: ellipsis; }

@@ -33,11 +33,22 @@ export default function LaunchTokenButton({ listingId, name, description, ownerI
   const [feeSelection, setFeeSelection] = useState<'market' | 'frenzy'>('market');
   const [holderGated, setHolderGated] = useState(false);
   const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [busy, setBusy] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [checkedOwner, setCheckedOwner] = useState(false);
   const [message, setMessage] = useState('');
+  const [launchedMint, setLaunchedMint] = useState('');
+  const [copiedMint, setCopiedMint] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!image) return;
+    const reader = new FileReader();
+    reader.onload = () => { if (typeof reader.result === 'string') setImagePreview(reader.result); };
+    reader.readAsDataURL(image);
+    return () => reader.abort();
+  }, [image]);
 
   useEffect(() => {
     let active = true;
@@ -50,9 +61,19 @@ export default function LaunchTokenButton({ listingId, name, description, ownerI
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, [ownerId]);
 
+  async function copyMint() {
+    if (!launchedMint) return;
+    try {
+      await navigator.clipboard.writeText(launchedMint);
+      setCopiedMint(true);
+      window.setTimeout(() => setCopiedMint(false), 1800);
+    } catch { setCopiedMint(false); }
+  }
+
   async function launch(event: React.FormEvent) {
     event.preventDefault();
-    setError(''); setMessage('');
+    if (launchedMint) return;
+    setError(''); setMessage(''); setLaunchedMint('');
     if (!publicKey || !signTransaction) return setError('Connect a wallet that supports transaction signing.');
     if (!image || !imageTypes.has(image.type) || image.size > 5_000_000) return setError('Choose a JPEG, PNG, GIF, or WebP image up to 5 MB.');
     const ticker = symbol.trim().toUpperCase();
@@ -82,7 +103,8 @@ export default function LaunchTokenButton({ listingId, name, description, ownerI
       form.set('tokenSymbol', ticker); form.set('feeSelection', feeSelection); form.set('headerImage', image, image.name);
       form.set('vaultMode', String(holderGated));
       const result = await readJson(await fetch('/api/solana/launch/submit', { method: 'POST', headers: authorization, body: form }));
-      setMessage(`Token launched: ${result.mint}`);
+      setLaunchedMint(result.mint);
+      setMessage("Launch confirmed. Your token mint is: " + result.mint);
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Token launch failed.');
@@ -96,10 +118,11 @@ export default function LaunchTokenButton({ listingId, name, description, ownerI
       <label className="text-sm text-zinc-300">Token ticker<input required minLength={2} maxLength={10} pattern="[A-Za-z0-9]{2,10}" value={symbol} onChange={e => setSymbol(e.target.value)} placeholder="SWARM" className="mt-2 w-full rounded-lg border border-zinc-700 bg-black p-3 uppercase" /></label>
       <label className="text-sm text-zinc-300">Launch mode<select value={feeSelection} onChange={e => setFeeSelection(e.target.value as 'market' | 'frenzy')} className="mt-2 w-full rounded-lg border border-zinc-700 bg-black p-3"><option value="market">Standard</option><option value="frenzy">Frenzy</option></select></label>
       <label className="flex items-start gap-3 rounded-xl border border-zinc-800 bg-black/40 p-4 text-sm text-zinc-300 sm:col-span-2"><input type="checkbox" checked={holderGated} onChange={event => setHolderGated(event.target.checked)} className="mt-1 accent-amber-500" /><span><b className="block text-zinc-100">Require token-holder access</b><span className="mt-1 block text-xs leading-5 text-zinc-500">Only wallets holding this token can reveal the listing description and source. The on-chain token metadata will use a generic description so your private listing description is not published there. Visitors sign a message; no payment transaction is sent.</span></span></label>
-      <label className="text-sm text-zinc-300 sm:col-span-2">Token image<input required type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => setImage(e.target.files?.[0] || null)} className="mt-2 block w-full rounded-lg border border-zinc-700 bg-black p-3 text-sm" /></label>
+      <label className="text-sm text-zinc-300 sm:col-span-2">Token image<input required type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => { setImagePreview(""); setImage(e.target.files?.[0] || null); }} className="mt-2 block w-full rounded-lg border border-zinc-700 bg-black p-3 text-sm" /></label>
+      <div className="sm:col-span-2 rounded-xl border border-zinc-800 bg-black/40 p-4"><p className="text-xs font-semibold uppercase tracking-[.16em] text-zinc-500">Launch preview</p><div className="mt-3 flex items-center gap-4">{imagePreview ? <img src={imagePreview} alt="Token image preview" className="h-16 w-16 rounded-xl border border-zinc-700 object-cover" /> : <div className="grid h-16 w-16 place-items-center rounded-xl border border-zinc-700 bg-zinc-900 text-2xl text-violet-300">◇</div>}<div className="min-w-0"><p className="truncate font-semibold text-zinc-100">{name.slice(0, 32)} <span className="text-violet-300">{symbol.trim() ? "$" + symbol.trim().toUpperCase() : "$TICKER"}</span></p><p className="mt-1 text-xs text-zinc-400">{feeSelection === "frenzy" ? "Frenzy" : "Standard"} launch · Jupiter Studio</p></div></div></div>
       {error && <p role="alert" className="sm:col-span-2 rounded-lg border border-rose-900 bg-rose-950/30 p-3 text-sm text-rose-200">{error}</p>}
-      {message && <p className="sm:col-span-2 break-all rounded-lg border border-emerald-900 bg-emerald-950/30 p-3 text-sm text-emerald-200">{message}</p>}
-      <button disabled={busy || !publicKey} className="rounded-xl bg-purple-600 px-5 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2">{busy ? 'Preparing wallet transaction…' : 'Create and sign launch transaction'}</button>
+      {message && <div role="status" className="sm:col-span-2 break-all rounded-lg border border-emerald-900 bg-emerald-950/30 p-3 text-sm text-emerald-200"><p>{message}</p>{launchedMint && <div className="mt-3 flex flex-wrap gap-3"><button type="button" onClick={copyMint} className="rounded-md border border-emerald-800 px-3 py-2 font-semibold hover:bg-emerald-900/40">{copiedMint ? "Copied mint" : "Copy mint address"}</button><a href={"https://solscan.io/token/" + encodeURIComponent(launchedMint)} target="_blank" rel="noreferrer" className="rounded-md border border-emerald-800 px-3 py-2 font-semibold hover:bg-emerald-900/40">View on Solscan ↗</a></div>}</div>}
+      <button disabled={busy || !publicKey || Boolean(launchedMint)} className="rounded-xl bg-purple-600 px-5 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2">{busy ? 'Preparing wallet transaction…' : launchedMint ? 'Launch submitted' : 'Create and sign launch transaction'}</button>
     </form>
   </section>;
 }
