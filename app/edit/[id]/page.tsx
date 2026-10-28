@@ -19,6 +19,9 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
     image_url: '',
     price_usd: 0,
     is_free: false,
+    demo_task: '',
+    demo_steps: '',
+    demo_result: '',
   });
 
   useEffect(() => {
@@ -33,7 +36,7 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
       }
       const { data, error } = await supabase
         .from('agents')
-        .select('id,name,description,image_url,price_usd,is_free,owner_id,vault_mode,token_address')
+        .select('id,name,description,image_url,price_usd,is_free,owner_id,vault_mode,token_address,demo_task,demo_steps,demo_result')
         .eq('id', resolvedParams.id)
         .eq('owner_id', owner)
         .single();
@@ -51,6 +54,9 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
           image_url: data.image_url || '',
           price_usd: data.price_usd || 0,
           is_free: data.is_free || false,
+          demo_task: data.demo_task || '',
+          demo_steps: Array.isArray(data.demo_steps) ? data.demo_steps.join('\n') : '',
+          demo_result: data.demo_result || '',
         });
       } else setLoadError(error?.message || 'Listing not found or you do not own it.');
       setLoading(false);
@@ -61,6 +67,12 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ownerId) return setLoadError('Sign in to edit your listings.');
+    const demoParts = [formData.demo_task.trim(), formData.demo_steps.trim(), formData.demo_result.trim()];
+    if (demoParts.some(Boolean) && !demoParts.every(Boolean)) {
+      setLoadError('Complete the sample task, steps, and result together, or leave all three blank.');
+      return;
+    }
+    setLoadError('');
     setSaving(true);
 
     try {
@@ -72,6 +84,9 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
           image_url: formData.image_url || null,
           price_usd: formData.is_free ? 0 : formData.price_usd,
           is_free: formData.is_free,
+          demo_task: formData.demo_task.trim() || null,
+          demo_steps: formData.demo_steps.split('\n').map(step => step.trim()).filter(Boolean).slice(0, 8),
+          demo_result: formData.demo_result.trim() || null,
         })
         .eq('id', resolvedParams.id)
         .eq('owner_id', ownerId);
@@ -150,6 +165,7 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
               </div>
             )}
 
+            <details className="rounded-xl border border-gray-800 bg-black/40 p-4"><summary className="cursor-pointer font-semibold text-gray-200">Guided example (optional)</summary><p className="mt-2 text-xs leading-5 text-gray-500">Add a creator-written task, steps, and example result. Visitors see it as a walkthrough, not a live agent run.</p><label className="mt-4 block text-sm text-gray-400">Sample task<textarea maxLength={1200} rows={3} value={formData.demo_task} placeholder="What should a visitor ask this agent to do?" className="mt-2 w-full rounded-lg border border-gray-700 bg-black p-3" onChange={e => setFormData({...formData, demo_task: e.target.value})} /></label><label className="mt-4 block text-sm text-gray-400">Steps (one per line, up to 8)<textarea maxLength={2400} rows={4} value={formData.demo_steps} placeholder="Describe the agent workflow, one step per line." className="mt-2 w-full rounded-lg border border-gray-700 bg-black p-3" onChange={e => setFormData({...formData, demo_steps: e.target.value})} /></label><label className="mt-4 block text-sm text-gray-400">Example result<textarea maxLength={3000} rows={4} value={formData.demo_result} placeholder="Add an example output for this sample task." className="mt-2 w-full rounded-lg border border-gray-700 bg-black p-3" onChange={e => setFormData({...formData, demo_result: e.target.value})} /></label></details>
             <button 
               type="submit" disabled={saving}
               className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl transition disabled:opacity-50"

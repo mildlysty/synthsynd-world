@@ -10,6 +10,7 @@ function publicFields(row: Record<string, unknown>) {
     "id", "name", "description", "image_url", "price_usd", "user_id", "is_free", "created_at",
     "statusType", "category", "tags", "language", "token_address", "token_symbol", "pool_address",
     "fee_selection", "vault_mode", "mcp_server_url", "x402_url", "use_cases", "requirements", "links",
+    "demo_task", "demo_steps", "demo_result",
   ];
   return Object.fromEntries(allowed.filter((key) => key in row).map((key) => [key, row[key]]));
 }
@@ -37,7 +38,7 @@ export async function GET(
   });
   const { data, error } = await supabase
     .from("agents")
-    .select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,fee_selection,vault_mode,mcp_server_url,x402_url,requirements,use_cases,links")
+    .select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,fee_selection,vault_mode,mcp_server_url,x402_url,requirements,use_cases,links,demo_task,demo_steps,demo_result")
     .eq("id", id)
     .maybeSingle();
 

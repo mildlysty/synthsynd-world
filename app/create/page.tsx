@@ -10,7 +10,7 @@ export default function Create() {
   const { publicKey } = useWallet();
   const [session, setSession] = useState<Session | null>(null);
   const router = useRouter();
-  const [form, setForm] = useState({ name: '', desc: '', img: '', mcpUrl: '', x402Url: '', content: '', category: '', tags: '', language: '', price: 0.01, free: true, type: 'agent' });
+  const [form, setForm] = useState({ name: '', desc: '', img: '', mcpUrl: '', x402Url: '', content: '', category: '', tags: '', language: '', price: 0.01, free: true, type: 'agent', demoTask: '', demoSteps: '', demoResult: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -34,6 +34,10 @@ export default function Create() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session) return setError('Sign in with Google or X before publishing.');
+    const demoParts = [form.demoTask.trim(), form.demoSteps.trim(), form.demoResult.trim()];
+    if (form.type === 'agent' && demoParts.some(Boolean) && !demoParts.every(Boolean)) {
+      return setError('Complete the sample task, steps, and result together, or leave all three blank.');
+    }
     setSaving(true); setError('');
     const { error: insertError } = await supabase.from('agents').insert({
       id: crypto.randomUUID(),
@@ -44,7 +48,12 @@ export default function Create() {
       category: form.category.trim() || null,
       tags: form.tags.split(',').map(tag => tag.trim()).filter(Boolean).slice(0, 20),
       language: form.language.trim() || null,
-      ...(form.type === 'agent' ? { agent_code: form.content } : {}),
+      ...(form.type === 'agent' ? {
+        agent_code: form.content,
+        demo_task: form.demoTask.trim() || null,
+        demo_steps: form.demoSteps.split('\n').map(step => step.trim()).filter(Boolean).slice(0, 8),
+        demo_result: form.demoResult.trim() || null,
+      } : {}),
       ...(form.type === 'prompt' ? { prompt_body: form.content } : {}),
       ...(form.type === 'tool' ? { tool_code: form.content } : {}),
       ...(form.type === 'skill' ? { skill_content: form.content } : {}),
@@ -84,6 +93,7 @@ export default function Create() {
           <option value="skill">Skill</option>
           <option value="mcp">MCP server</option>
         </select>
+        {form.type === 'agent' && <details className="rounded-xl border border-gray-800 bg-black/40 p-4"><summary className="cursor-pointer font-semibold text-gray-200">Add a guided example (optional)</summary><p className="mt-2 text-xs leading-5 text-gray-500">Show visitors a sample task, your workflow steps, and an example result. This is creator-written content, not a live agent run.</p><label className="mt-4 block text-sm text-gray-300">Sample task<textarea maxLength={1200} rows={3} value={form.demoTask} placeholder="What should a visitor ask this agent to do?" className="mt-2 w-full rounded-lg border border-gray-700 bg-black p-3" onChange={e => setForm({...form, demoTask: e.target.value})} /></label><label className="mt-4 block text-sm text-gray-300">Steps (one per line, up to 8)<textarea maxLength={2400} rows={4} value={form.demoSteps} placeholder={"1. Review the input\n2. Apply the agent's approach\n3. Check the result"} className="mt-2 w-full rounded-lg border border-gray-700 bg-black p-3" onChange={e => setForm({...form, demoSteps: e.target.value})} /></label><label className="mt-4 block text-sm text-gray-300">Example result<textarea maxLength={3000} rows={4} value={form.demoResult} placeholder="Add an example output for this sample task." className="mt-2 w-full rounded-lg border border-gray-700 bg-black p-3" onChange={e => setForm({...form, demoResult: e.target.value})} /></label></details>}
         {form.type !== 'mcp' && <label className="block text-sm text-gray-300">{form.type === 'prompt' ? 'Prompt content' : form.type === 'skill' ? 'Skill Markdown' : form.type === 'tool' ? 'Tool source code' : 'Agent source code'}
           <textarea required minLength={form.type === 'agent' || form.type === 'tool' ? 5 : 1} value={form.content} rows={10} placeholder={form.type === 'prompt' ? 'Write the prompt…' : form.type === 'skill' ? 'Paste the skill instructions in Markdown…' : 'Paste the source code…'} className="mt-2 w-full rounded-lg border border-gray-700 bg-black p-3 font-mono text-sm" onChange={e => setForm({...form, content: e.target.value})} />
         </label>}

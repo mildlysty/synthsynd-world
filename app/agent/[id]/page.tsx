@@ -7,12 +7,13 @@ import LaunchTokenButton from '../../components/LaunchTokenButton';
 import AttachExistingToken from '../../components/AttachExistingToken';
 import CreatorFeeClaim from '../../components/CreatorFeeClaim';
 import X402Invoke from '../../components/X402Invoke';
+import AgentDemo from '../../components/AgentDemo';
 
 export default async function Agent({ params }: { params: Promise<{ id: string }> }) {
   const p = await params;
   const { data: agent } = await supabase
     .from('agents')
-    .select('id,name,description,image_url,price_usd,is_free,user_id,owner_id,created_at,statusType,token_address,token_symbol,launch_config_key,fee_selection,vault_mode,token_creator_wallet,mcp_server_url,x402_url,category,tags,language')
+    .select('id,name,description,image_url,price_usd,is_free,user_id,owner_id,created_at,statusType,token_address,token_symbol,launch_config_key,fee_selection,vault_mode,token_creator_wallet,mcp_server_url,x402_url,category,tags,language,demo_task,demo_steps,demo_result')
     .eq('id', p.id)
     .single();
   if (!agent) notFound();
@@ -29,6 +30,7 @@ export default async function Agent({ params }: { params: Promise<{ id: string }
           : <p className="whitespace-pre-wrap text-lg leading-8 text-zinc-400">{agent.description}</p>}
         {agent.category && <p className="mt-4 text-sm text-zinc-500">Category: {agent.category}{agent.language ? ` · ${agent.language}` : ''}</p>}
         {agent.x402_url && <X402Invoke endpoint={agent.x402_url} />}
+        {listingType === 'agent' && <AgentDemo name={agent.name} task={agent.demo_task} steps={agent.demo_steps} result={agent.demo_result} />}
         {agent.tags?.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{agent.tags.map((tag: string)=><span key={tag} className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-400">{tag}</span>)}</div>}
         {agent.statusType === 'mcp' && agent.mcp_server_url && <a href={agent.mcp_server_url} target="_blank" rel="noreferrer" className="mt-6 inline-flex rounded-lg border border-emerald-800 px-4 py-2 text-sm text-emerald-300">Open MCP server ↗</a>}
         {['agent','prompt','tool','skill'].includes(listingType) && <ListingContent id={agent.id} type={listingType} isFree={agent.is_free} holderGated={Boolean(agent.vault_mode && agent.token_address)} tokenAddress={agent.token_address || ''} />}
