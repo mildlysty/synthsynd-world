@@ -4,6 +4,7 @@ import { recordApiKeyUsage } from "../../record-key-usage";
 import { getAdminSupabase, getAuthenticatedSupabase } from "../../../_lib/auth";
 import { checkApiKeyQuota } from "../../../_lib/api-key-quota";
 import { hasHolderAccess } from "../../../_lib/holder-access";
+import { verifyLocalMockGrant } from "../../../_lib/local-mock-checkout";
 
 function publicFields(row: Record<string, unknown>) {
   const allowed = [
@@ -68,6 +69,7 @@ export async function GET(
       const { data: purchase } = await auth.supabase.from("marketplace_purchases")
         .select("id").eq("buyer_id", auth.user.id).eq("listing_id", id).eq("status", "paid").maybeSingle();
       canReadContent = Boolean(purchase);
+      if (!canReadContent) canReadContent = verifyLocalMockGrant(_request, auth.user.id, id);
     }
   }
   if (holderGated) canReadContent = authorized && (owner || hasHolder || canReadContent);
