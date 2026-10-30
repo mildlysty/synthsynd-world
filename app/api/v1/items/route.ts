@@ -110,6 +110,9 @@ export async function GET(request: Request) {
 }
 
 function databaseError(error: { message: string; code: string }) {
+  // Keep production responses generic, but record the database diagnostic in
+  // Vercel Runtime Logs so schema and permission failures can be identified.
+  console.error("[marketplace] Failed to load items", { code: error.code, message: error.message });
   return NextResponse.json({
     error: "Could not load marketplace items.",
     ...(process.env.NODE_ENV === "development" ? { detail: error.message, code: error.code } : {}),
