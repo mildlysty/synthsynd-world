@@ -367,14 +367,15 @@ export async function POST(request: Request) {
       : String(payment?.amount ?? "");
 
   if (
-    !providerResponse.ok ||
-    !payment ||
-    payment.status !== "ACTIVE" ||
-    payment.orderId !== orderId ||
-    responseAmount !== formatRupees(amountPaise) ||
-    !payment.paymentId ||
-    !secureCheckout
-  ) {
+  !providerResponse.ok ||
+  !payment ||
+  payment.status !== "ACTIVE" ||
+  payment.orderId !== orderId ||
+  responseAmount !== formatRupees(amountPaise) ||
+  !payment.paymentId ||
+  !checkoutUrl ||
+  !secureCheckout
+) {
     console.error("[youpi] Payment creation was rejected", {
       status: providerResponse.status,
     });
