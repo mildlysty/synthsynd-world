@@ -21,4 +21,4 @@ An independent AI marketplace built with Next.js, Supabase, Stripe, and Solana w
 
 Keep `.env.local`, service-role credentials, Stripe secrets, AI provider keys, and Jupiter keys out of source control and client-side `NEXT_PUBLIC_` variables.
 
-The full public feature comparison and remaining parity gaps are in [docs/swarms-world-parity.md](docs/swarms-world-parity.md).
+
