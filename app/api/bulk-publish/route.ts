@@ -13,12 +13,12 @@ async function githubJson<T>(url: string): Promise<T> {
 export async function POST(request: Request) {
   const auth = await getAuthenticatedSupabase(request);
   if (!auth) return NextResponse.json({ error: "Sign in to bulk publish repositories." }, { status: 401 });
-  let body: { repositories?: unknown; isFree?: unknown; priceUsd?: unknown };
+  let body: { repositories?: unknown; isFree?: unknown; priceInr?: unknown };
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Request body must be JSON." }, { status: 400 }); }
   const urls = Array.isArray(body.repositories) ? body.repositories : [];
   if (!urls.length || urls.length > 10) return NextResponse.json({ error: "Provide between 1 and 10 public GitHub repository URLs." }, { status: 400 });
   const isFree = body.isFree !== false;
-  const price = isFree ? 0 : Number(body.priceUsd);
+  const price = isFree ? 0 : Number(body.priceInr);
   if (!isFree && (!Number.isFinite(price) || price <= 0)) return NextResponse.json({ error: "Set a positive price for paid imports." }, { status: 400 });
 
   const results: Array<{ repo: string; id?: string; error?: string }> = [];
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       const { data: listing, error } = await auth.supabase.from("agents").insert({
         id: crypto.randomUUID(), owner_id: auth.user.id, user_id: auth.user.id,
         name: listingName, description: text(repo.description, 4000) || `Imported public repository ${repo.full_name}.`,
-        image_url: repo.owner.avatar_url, statusType: "agent", is_free: isFree, price_usd: price,
+        image_url: repo.owner.avatar_url, statusType: "agent", is_free: isFree, price_inr: price,
         created_at: new Date().toISOString(), category: "Developer", language: "Python / JavaScript / TypeScript",
         tags: ["github", "repository"], agent_code: codeParts.join("\n\n"),
         links: [{ name: "GitHub repository", url: repository }],

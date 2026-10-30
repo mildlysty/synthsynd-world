@@ -17,7 +17,7 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
     name: '',
     description: '',
     image_url: '',
-    price_usd: 0,
+    price_inr: 0,
     is_free: false,
     demo_task: '',
     demo_steps: '',
@@ -36,7 +36,7 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
       }
       const { data, error } = await supabase
         .from('agents')
-        .select('id,name,description,image_url,price_usd,is_free,owner_id,vault_mode,token_address,demo_task,demo_steps,demo_result')
+        .select('id,name,description,image_url,price_inr,is_free,owner_id,vault_mode,token_address,demo_task,demo_steps,demo_result')
         .eq('id', resolvedParams.id)
         .eq('owner_id', owner)
         .single();
@@ -52,7 +52,7 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
           name: data.name || '',
           description,
           image_url: data.image_url || '',
-          price_usd: data.price_usd || 0,
+          price_inr: data.price_inr ?? 0,
           is_free: data.is_free || false,
           demo_task: data.demo_task || '',
           demo_steps: Array.isArray(data.demo_steps) ? data.demo_steps.join('\n') : '',
@@ -82,7 +82,7 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
           name: formData.name,
           description: formData.description,
           image_url: formData.image_url || null,
-          price_usd: formData.is_free ? 0 : formData.price_usd,
+          price_inr: formData.is_free ? 0 : formData.price_inr,
           is_free: formData.is_free,
           demo_task: formData.demo_task.trim() || null,
           demo_steps: formData.demo_steps.split('\n').map(step => step.trim()).filter(Boolean).slice(0, 8),
@@ -156,10 +156,10 @@ export default function EditAgent({ params }: { params: Promise<{ id: string }> 
 
             {!formData.is_free && (
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Price in $SSDY</label>
+                <label className="block text-sm text-gray-400 mb-2">Price in INR (₹)</label>
                 <input 
-                  required type="number" min="0" step="0.01" value={formData.price_usd}
-                  onChange={(e) => setFormData({...formData, price_usd: parseFloat(e.target.value)})}
+                  required type="number" min="1" step="0.01" value={formData.price_inr}
+                  onChange={(e) => setFormData({...formData, price_inr: parseFloat(e.target.value)})}
                   className="w-full bg-black border border-gray-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none"
                 />
               </div>

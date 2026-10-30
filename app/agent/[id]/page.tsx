@@ -13,7 +13,7 @@ export default async function Agent({ params }: { params: Promise<{ id: string }
   const p = await params;
   const { data: agent } = await supabase
     .from('agents')
-    .select('id,name,description,image_url,price_usd,is_free,user_id,owner_id,created_at,statusType,token_address,token_symbol,launch_config_key,fee_selection,vault_mode,token_creator_wallet,mcp_server_url,x402_url,category,tags,language,demo_task,demo_steps,demo_result')
+    .select('id,name,description,image_url,price_inr,is_free,user_id,owner_id,created_at,statusType,token_address,token_symbol,launch_config_key,fee_selection,vault_mode,token_creator_wallet,mcp_server_url,x402_url,category,tags,language,demo_task,demo_steps,demo_result')
     .eq('id', p.id)
     .single();
   if (!agent) notFound();
@@ -48,9 +48,8 @@ export default async function Agent({ params }: { params: Promise<{ id: string }
           <div className="mb-4 h-52 overflow-hidden rounded-xl bg-zinc-900">
             {agent.image_url && <img src={agent.image_url} alt="" className="h-full w-full object-cover" />}
           </div>
-          <h2 className="mb-4 text-2xl font-bold">{agent.is_free ? 'Free access' : `$${Number(agent.price_usd || 0).toFixed(2)} USD`}</h2>
-          <BuyButton listingId={agent.id} price={agent.price_usd} isFree={agent.is_free} />
-          <p className="mt-3 text-xs leading-5 text-zinc-500">Payments use Stripe Checkout; the creator must complete payout onboarding. Blockchain token purchases require a separate Solana launch integration.</p>
+          <h2 className="mb-4 text-2xl font-bold">{agent.is_free ? 'Free access' : agent.price_inr != null ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(Number(agent.price_inr)) : 'INR price needed'}</h2>
+          <BuyButton listingId={agent.id} isFree={agent.is_free} />
         </div>
       </div>
     </div>

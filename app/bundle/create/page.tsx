@@ -41,7 +41,7 @@ export default function CreateBundlePage() {
     const bundleId = crypto.randomUUID();
     const { error: bundleError } = await supabase.from("marketplace_bundles").insert({
       id: bundleId, owner_id: ownerId, name: name.trim(), description: description.trim(),
-      image_url: imageUrl.trim() || null, is_free: isFree, price_usd: isFree ? 0 : Number(price), status: "published",
+      image_url: imageUrl.trim() || null, is_free: isFree, price_inr: isFree ? 0 : Number(price), price_usd: 0, status: "published",
       category: category.trim() || null, tags: tags.split(",").map((tag)=>tag.trim()).filter(Boolean).slice(0,20),
     });
     if (bundleError) { setSaving(false); setError(`Could not create bundle: ${bundleError.message}`); return; }
@@ -65,7 +65,7 @@ export default function CreateBundlePage() {
       <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm text-zinc-400">Category<input maxLength={80} value={category} onChange={(e)=>setCategory(e.target.value)} className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white" /></label><label className="block text-sm text-zinc-400">Tags<input maxLength={500} value={tags} onChange={(e)=>setTags(e.target.value)} placeholder="research, automation" className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white" /></label></div>
       <fieldset><legend className="text-sm text-zinc-400">Listings to include</legend>{ownedItems.length===0?<p className="mt-2 text-sm text-zinc-500">Publish at least one listing first.</p>:<div className="mt-2 max-h-60 space-y-2 overflow-auto rounded-xl border border-zinc-800 p-3">{ownedItems.map((item)=><label key={item.id} className="flex items-center gap-3 rounded-lg p-2 hover:bg-zinc-900"><input type="checkbox" checked={selected.includes(item.id)} onChange={(event)=>setSelected((current)=>event.target.checked?[...current,item.id]:current.filter((id)=>id!==item.id))} /><span>{item.name}</span><span className="ml-auto text-xs uppercase text-zinc-500">{item.statusType||"agent"}</span></label>)}</div>}</fieldset>
       <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={isFree} onChange={(e)=>setIsFree(e.target.checked)} />Free bundle</label>
-      {!isFree&&<label className="block text-sm text-zinc-400">Price (USD)<input required min="0.01" step="0.01" type="number" value={price} onChange={(e)=>setPrice(e.target.value)} className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white" /></label>}
+      {!isFree&&<label className="block text-sm text-zinc-400">Price (INR ₹)<input required min="1" step="0.01" type="number" value={price} onChange={(e)=>setPrice(e.target.value)} className="mt-2 w-full rounded-xl border border-zinc-700 bg-black px-4 py-3 text-white" /></label>}
       <button disabled={saving||ownedItems.length===0} className="rounded-xl bg-purple-600 px-5 py-3 font-semibold disabled:opacity-50">{saving?"Publishing…":"Publish bundle"}</button>
     </form>
   </div></main>;

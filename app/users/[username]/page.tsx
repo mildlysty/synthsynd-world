@@ -21,7 +21,7 @@ export default async function PublicProfile({ params }: { params: Promise<{ user
       wallet: null,
     };
     const { data } = await supabase.from("agents")
-      .select("id,name,description,image_url,price_usd,is_free,statusType,token_symbol,vault_mode,token_address")
+      .select("id,name,description,image_url,price_inr,is_free,statusType,token_symbol,vault_mode,token_address")
       .eq("owner_id", marketplaceProfile.owner_id)
       .order("created_at", { ascending: false });
     items = (data ?? []) as MarketplaceItem[];
@@ -32,7 +32,7 @@ export default async function PublicProfile({ params }: { params: Promise<{ user
     if (!legacyProfile) notFound();
     profile = { username: legacyProfile.username, displayName: legacyProfile.username, bio: "", avatarUrl: null, websiteUrl: null, wallet: legacyProfile.wallet_address };
     const { data } = await supabase.from("agents")
-      .select("id,name,description,image_url,price_usd,is_free,statusType,token_symbol,vault_mode,token_address")
+      .select("id,name,description,image_url,price_inr,is_free,statusType,token_symbol,vault_mode,token_address")
       .eq("user_id", legacyProfile.wallet_address)
       .order("created_at", { ascending: false });
     items = (data ?? []) as MarketplaceItem[];

@@ -104,7 +104,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ jsonrpc: "2.0", id: rpc.id ?? null, result: { isError: true, content: [{ type: "text", text: "type must be all, agent, prompt, tool, mcp, skill, or bundle." }] } });
     }
     if (requestedType === "bundle") {
-      let bundles = supabase.from("marketplace_bundles").select("id,name,description,image_url,price_usd,owner_id,is_free,created_at").eq("status", "published").order("created_at", { ascending: false }).limit(limit);
+      let bundles = supabase.from("marketplace_bundles").select("id,name,description,image_url,price_inr,owner_id,is_free,created_at").eq("status", "published").order("created_at", { ascending: false }).limit(limit);
       if (search) bundles = bundles.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
       const { data, error } = await bundles;
       if (error) return NextResponse.json({ jsonrpc: "2.0", id: rpc.id ?? null, result: { isError: true, content: [{ type: "text", text: "Could not search listings." }] } });
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ jsonrpc: "2.0", id: rpc.id ?? null, result: { content: [{ type: "text", text: JSON.stringify({ items }) }] } });
     }
     let query = supabase.from("agents")
-      .select("id,name,description,image_url,price_usd,is_free,user_id,created_at,statusType,token_address,token_symbol")
+      .select("id,name,description,image_url,price_inr,is_free,user_id,created_at,statusType,token_address,token_symbol")
       .order("created_at", { ascending: false }).limit(limit);
     if (search) query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
     if (requestedType !== "all") query = query.eq("statusType", requestedType);
@@ -124,17 +124,17 @@ export async function POST(request: Request) {
   if (name === "get_listing") {
     if (typeof args.id !== "string" || !args.id.trim()) return rpcError(rpc.id, -32602, "A listing id is required.");
     const { data, error } = await supabase.from("agents")
-      .select("id,name,description,image_url,price_usd,is_free,user_id,owner_id,created_at,statusType,token_address,token_symbol")
+      .select("id,name,description,image_url,price_inr,is_free,user_id,owner_id,created_at,statusType,token_address,token_symbol")
       .eq("id", args.id).maybeSingle();
     if (error) return NextResponse.json({ jsonrpc: "2.0", id: rpc.id ?? null, result: { isError: true, content: [{ type: "text", text: "Could not load listing." }] } });
     if (!data) {
-      const { data: bundle } = await supabase.from("marketplace_bundles").select("id,name,description,image_url,price_usd,owner_id,is_free,created_at").eq("id", args.id).eq("status", "published").maybeSingle();
+      const { data: bundle } = await supabase.from("marketplace_bundles").select("id,name,description,image_url,price_inr,owner_id,is_free,created_at").eq("id", args.id).eq("status", "published").maybeSingle();
       if (!bundle) return NextResponse.json({ jsonrpc: "2.0", id: rpc.id ?? null, result: { isError: true, content: [{ type: "text", text: "Listing not found." }] } });
       return NextResponse.json({ jsonrpc: "2.0", id: rpc.id ?? null, result: { content: [{ type: "text", text: JSON.stringify({ ...bundle, user_id: bundle.owner_id, statusType: "bundle" }) }] } });
     }
     const listing: Record<string, unknown> = {
       id: data.id, name: data.name, description: data.description, image_url: data.image_url,
-      price_usd: data.price_usd, is_free: data.is_free, user_id: data.user_id, created_at: data.created_at,
+      price_inr: data.price_inr, currency: "INR", is_free: data.is_free, user_id: data.user_id, created_at: data.created_at,
       statusType: data.statusType, token_address: data.token_address, token_symbol: data.token_symbol,
     };
     const sourceColumn: Record<string, string> = { agent: "agent_code", prompt: "prompt_body", tool: "tool_code", skill: "skill_content" };

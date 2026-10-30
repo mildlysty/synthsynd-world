@@ -42,7 +42,7 @@ export default function Create() {
     const { error: insertError } = await supabase.from('agents').insert({
       id: crypto.randomUUID(),
       name: form.name.trim(), description: form.desc.trim(), image_url: form.img.trim() || null,
-      price_usd: form.free ? 0 : form.price, is_free: form.free,
+      price_inr: form.free ? 0 : form.price, price_usd: 0, is_free: form.free,
       user_id: publicKey?.toBase58() ?? session.user.id, owner_id: session.user.id,
       created_at: new Date().toISOString(), statusType: form.type,
       category: form.category.trim() || null,
@@ -79,8 +79,8 @@ export default function Create() {
           <label className="block text-sm text-gray-300">Language<input maxLength={40} value={form.language} placeholder="e.g. Python" className="mt-2 w-full rounded-lg border border-gray-700 bg-black p-3" onChange={e => setForm({...form, language: e.target.value})} /></label>
         </div>
         <label className="block text-sm text-gray-300">Tags<input maxLength={500} value={form.tags} placeholder="research, finance, automation" className="mt-2 w-full rounded-lg border border-gray-700 bg-black p-3" onChange={e => setForm({...form, tags: e.target.value})} /></label>
-        <label className="block text-sm text-gray-300">Price (USD)
-          <input type="number" min="0.01" step="0.01" value={form.price} disabled={form.free} required={!form.free} className="mt-2 w-full p-3 bg-black border border-gray-700 rounded-lg disabled:opacity-50" onChange={e => setForm({...form, price: Number(e.target.value)})} />
+        <label className="block text-sm text-gray-300">Price (INR ₹)
+          <input type="number" min="1" step="0.01" value={form.price} disabled={form.free} required={!form.free} className="mt-2 w-full p-3 bg-black border border-gray-700 rounded-lg disabled:opacity-50" onChange={e => setForm({...form, price: Number(e.target.value)})} />
         </label>
         <label className="flex items-center gap-3 text-sm text-gray-300">
           <input type="checkbox" checked={form.free} onChange={e => setForm({...form, free: e.target.checked})} />

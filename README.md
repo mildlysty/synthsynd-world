@@ -9,7 +9,7 @@ An independent AI marketplace built with Next.js, Supabase, Stripe, and Solana w
 3. Apply every SQL file in `supabase/migrations` in filename order.
 4. Start the app with `npm run dev` and open `http://localhost:3000`.
 
-## Service setup
+
 
 - **Supabase:** `NEXT_PUBLIC_SUPABASE_URL` must be the project base URL (`https://<project-ref>.supabase.co`), without `/rest/v1`. Configure the anon key, Google/X OAuth credentials, and local/production redirect URLs. Set the server-only service role key for secure purchase writes, paid-content delivery, holder-gated descriptions, API-key quota checks, inference credits, and moderation. Set `ADMIN_USER_IDS` to comma-separated Supabase Auth UUIDs allowed to moderate listings. Apply migrations through `202610200017_holder_gated_descriptions.sql` before using all marketplace features. API request quotas are configurable in `marketplace_api_plan_limits` (default free/pro/premium: 60/120/300 per minute and 10k/100k/1m per month).
 - **x402 Bazaar:** set server-only `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` to enable live Coinbase catalog discovery at `/x402-bazaar`. Never expose these values with `NEXT_PUBLIC_` variables.

@@ -6,7 +6,7 @@ type MarketplaceItem = {
   name: string;
   description: string | null;
   image_url: string | null;
-  price_usd: number | null;
+  price_inr: number | null;
   is_free: boolean | null;
   user_id: string | null;
   statusType: string | null;
@@ -17,7 +17,7 @@ type MarketplaceItem = {
 export default async function McpServersPage() {
   const { data, error } = await supabase
     .from("agents")
-    .select("id,name,description,image_url,price_usd,is_free,user_id,statusType,created_at,mcp_server_url")
+    .select("id,name,description,image_url,price_inr,is_free,user_id,statusType,created_at,mcp_server_url")
     .eq("statusType", "mcp")
     .order("created_at", { ascending: false })
     .limit(48);
@@ -75,7 +75,7 @@ export default async function McpServersPage() {
                   <div className="flex items-start justify-between gap-4">
                     <h3 className="text-lg font-semibold">{server.name}</h3>
                     <span className="shrink-0 rounded-full border border-zinc-700 px-2.5 py-1 text-xs text-zinc-400">
-                      {server.is_free || !server.price_usd ? "Free" : `$${Number(server.price_usd).toFixed(2)}`}
+                      {server.is_free ? "Free" : server.price_inr != null ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(Number(server.price_inr)) : "INR price needed"}
                     </span>
                   </div>
                   <p className="mt-2 line-clamp-3 text-sm leading-6 text-zinc-400">{server.description || "No description provided."}</p>

@@ -7,7 +7,7 @@ const principles = [
   },
   {
     title: 'Review before checkout',
-    body: 'Read the listing details, price, and seller information before buying. Paid checkout uses Stripe Connect; payment availability and payout timing depend on Stripe and the seller account.',
+    body: 'Read the listing details, INR price, and seller information before buying. Free listings are available; paid INR checkout is currently disabled while payment and creator-payout options are reviewed.',
   },
   {
     title: 'Wallet actions stay in your wallet',

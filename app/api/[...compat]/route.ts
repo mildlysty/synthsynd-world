@@ -42,7 +42,7 @@ function csvTags(value: unknown) {
 function publicListing(row: Listing, includeContent = false, holderAccess = false) {
   const result: Record<string, unknown> = {
     id: row.id, name: row.name, description: row.vault_mode && row.token_address && !holderAccess ? undefined : row.description, image_url: row.image_url,
-    price_usd: row.price_usd, user_id: row.user_id, is_free: row.is_free,
+    price_inr: row.price_inr, currency: "INR", user_id: row.user_id, is_free: row.is_free,
     created_at: row.created_at, statusType: row.statusType, category: row.category,
     tags: row.tags, language: row.language, useCases: row.use_cases, requirements: row.requirements,
     links: row.links, token_address: row.token_address, token_symbol: row.token_symbol,
@@ -59,7 +59,7 @@ function publicListing(row: Listing, includeContent = false, holderAccess = fals
 }
 
 async function loadListing(admin: SupabaseClient, id: string, type?: ListingType): Promise<Listing | null> {
-  let query = admin.from("agents").select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,fee_selection,vault_mode,mcp_server_url,x402_url,requirements,use_cases,links,publication_status").eq("id", id);
+  let query = admin.from("agents").select("id,name,description,image_url,price_inr,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,fee_selection,vault_mode,mcp_server_url,x402_url,requirements,use_cases,links,publication_status").eq("id", id);
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) query = admin.from("agents").select("*").eq("id", id);
   if (type) query = query.eq("statusType", type);
   const { data } = await query.maybeSingle();
@@ -89,7 +89,7 @@ async function listListings(request: Request, type: ListingType) {
   const params = new URL(request.url).searchParams;
   const page = Math.max(1, Math.floor(Number(params.get("page")) || 1));
   const limit = Math.min(100, Math.max(1, Math.floor(Number(params.get("limit")) || 20)));
-  let query = configured.public.from("agents").select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,fee_selection,vault_mode,mcp_server_url,requirements,use_cases,links", { count: "exact" })
+  let query = configured.public.from("agents").select("id,name,description,image_url,price_inr,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,fee_selection,vault_mode,mcp_server_url,requirements,use_cases,links", { count: "exact" })
     .eq("statusType", type).order("created_at", { ascending: false });
   const name = text(params.get("name"), 100);
   const category = text(params.get("category"), 80);
@@ -103,8 +103,8 @@ async function listListings(request: Request, type: ListingType) {
   if (language) query = query.ilike("language", `%${language.replace(/[%_,]/g, " ")}%`);
   if (tag) query = query.contains("tags", [tag]);
   if (free === "true" || free === "false") query = query.eq("is_free", free === "true");
-  if (Number.isFinite(minPrice) && params.has("min_price")) query = query.gte("price_usd", minPrice);
-  if (Number.isFinite(maxPrice) && params.has("max_price")) query = query.lte("price_usd", maxPrice);
+  if (Number.isFinite(minPrice) && params.has("min_price")) query = query.gte("price_inr", minPrice);
+  if (Number.isFinite(maxPrice) && params.has("max_price")) query = query.lte("price_inr", maxPrice);
   const { data, error, count } = await query.range((page - 1) * limit, page * limit - 1);
   if (error) return NextResponse.json({ error: "Could not load marketplace listings." }, { status: 500 });
   await keyOwner(request, configured.admin, new URL(request.url).pathname);
@@ -144,14 +144,14 @@ async function publish(request: Request, type: ListingType) {
   if (name.length < 2 || !description) return NextResponse.json({ error: "name and description are required." }, { status: 400 });
   if (type !== "tool" && source.length < 5) return NextResponse.json({ error: `${type} content must contain at least 5 characters.` }, { status: 400 });
   const isFree = body.is_free !== false;
-  const price = isFree ? 0 : Number(body.price_usd);
-  if (!Number.isFinite(price) || price < 0 || (!isFree && price === 0)) return NextResponse.json({ error: "Paid listings need a positive price_usd." }, { status: 400 });
+  const price = isFree ? 0 : Number(body.price_inr);
+  if (!Number.isFinite(price) || price < 0 || (!isFree && price === 0)) return NextResponse.json({ error: "Paid listings need a positive price_inr." }, { status: 400 });
   const rawCategory = body.category;
   const category = Array.isArray(rawCategory) ? rawCategory.map((item) => text(item, 80)).filter(Boolean).join(", ") : text(rawCategory, 120);
   const row: Record<string, unknown> = {
     id: crypto.randomUUID(), owner_id: ownerId, user_id: text(body.seller_wallet_address, 128) || ownerId,
     name, description, image_url: text(body.image_url, 2000) || null, statusType: type,
-    is_free: isFree, price_usd: price, category: category || null, language: text(body.language, 80) || null,
+    is_free: isFree, price_inr: price, category: category || null, language: text(body.language, 80) || null,
     tags: csvTags(body.tags), use_cases: Array.isArray(body.useCases) ? body.useCases.slice(0, 30) : [],
     requirements: Array.isArray(body.requirements) ? body.requirements.slice(0, 30) : [],
     links: Array.isArray(body.links) ? body.links.slice(0, 30) : [],
@@ -180,11 +180,11 @@ async function editListing(request: Request, type: ListingType) {
   const update: Record<string, unknown> = {};
   for (const key of ["name", "description", "image_url", "category", "language"]) if (typeof body[key] === "string") update[key] = text(body[key], key === "description" ? 5000 : 1000) || null;
   if (typeof body.is_free === "boolean") update.is_free = body.is_free;
-  if (body.price_usd !== undefined) update.price_usd = Number(body.price_usd);
+  if (body.price_inr !== undefined) update.price_inr = Number(body.price_inr);
   if (type === "agent" && typeof body.agent === "string") update.agent_code = text(body.agent, 100000);
   if (type === "prompt" && typeof body.prompt === "string") update.prompt_body = text(body.prompt, 100000);
   if (Array.isArray(body.tags) || typeof body.tags === "string") update.tags = csvTags(body.tags);
-  if (typeof update.price_usd === "number" && (!Number.isFinite(update.price_usd) || update.price_usd < 0)) return NextResponse.json({ error: "price_usd must be a non-negative number." }, { status: 400 });
+  if (typeof update.price_inr === "number" && (!Number.isFinite(update.price_inr) || update.price_inr < 0)) return NextResponse.json({ error: "price_inr must be a non-negative number." }, { status: 400 });
   const { error } = await configured.admin.from("agents").update(update).eq("id", id).eq("owner_id", ownerId);
   if (error) return NextResponse.json({ error: "Could not update listing." }, { status: 500 });
   return NextResponse.json({ success: true, id });
@@ -300,11 +300,11 @@ async function searchListings(request: Request) {
     if (!holderAccess) return NextResponse.json({ success: false, data: { ...item, gated: true }, access: { has_access: false, reason: "token_holder_required" } }, { status: 403 });
     return NextResponse.json({ success: true, data: item, access: { has_access: hasAccess, reason: hasAccess ? (holderGated ? "token_holder" : "free_or_entitled") : "purchase_required" } });
   }
-  let query = configured.public.from("agents").select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,vault_mode", { count: "exact" }).order("created_at", { ascending: false }).limit(50);
+  let query = configured.public.from("agents").select("id,name,description,image_url,price_inr,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,vault_mode", { count: "exact" }).order("created_at", { ascending: false }).limit(50);
   if (queryText) query = query.or(`name.ilike.%${queryText.replace(/[%_,]/g, " ")}%,description.ilike.%${queryText.replace(/[%_,]/g, " ")}%`);
   const { data, error, count } = await query;
   if (error) return NextResponse.json({ error: "Could not search listings." }, { status: 500 });
-  let bundleQuery = configured.public.from("marketplace_bundles").select("id,name,description,image_url,price_usd,owner_id,is_free,created_at", { count: "exact" }).eq("status", "published").order("created_at", { ascending: false }).limit(50);
+  let bundleQuery = configured.public.from("marketplace_bundles").select("id,name,description,image_url,price_inr,owner_id,is_free,created_at", { count: "exact" }).eq("status", "published").order("created_at", { ascending: false }).limit(50);
   if (queryText) bundleQuery = bundleQuery.or(`name.ilike.%${queryText.replace(/[%_,]/g, " ")}%,description.ilike.%${queryText.replace(/[%_,]/g, " ")}%`);
   const { data: bundles } = await bundleQuery;
   const output = [...(data ?? []).map((row) => publicListing(row as Listing)), ...(bundles ?? []).map((item) => ({ ...item, user_id: item.owner_id, statusType: "bundle" }))];
@@ -319,7 +319,7 @@ async function userProducts(request: Request) {
   let body: Record<string, unknown> = {};
   try { body = await request.json(); } catch { /* endpoint allows empty body */ }
   const productType = text(body.product_type, 20) || "all";
-  let query = configured.admin.from("agents").select("id,name,description,image_url,price_usd,is_free,created_at,statusType,category,tags", { count: "exact" }).eq("owner_id", ownerId).order("created_at", { ascending: false });
+  let query = configured.admin.from("agents").select("id,name,description,image_url,price_inr,is_free,created_at,statusType,category,tags", { count: "exact" }).eq("owner_id", ownerId).order("created_at", { ascending: false });
   if (["agents", "prompts", "tools"].includes(productType)) query = query.eq("statusType", productType.replace(/s$/, ""));
   const page = Math.max(1, Number(body.page) || 1), limit = Math.min(100, Math.max(1, Number(body.limit) || 20));
   const { data, error, count } = await query.range((page - 1) * limit, page * limit - 1);
@@ -355,7 +355,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ com
     if (key) return getListing(request, type, key, false);
     const configured = clients();
     if (!configured) return NextResponse.json({ error: "Marketplace database is not configured." }, { status: 503 });
-    let query = configured.public.from("agents").select("id,name,description,image_url,price_usd,user_id,is_free,created_at,statusType,category,tags,language").eq("statusType", type).limit(50);
+    let query = configured.public.from("agents").select("id,name,description,image_url,price_inr,user_id,is_free,created_at,statusType,category,tags,language").eq("statusType", type).limit(50);
     if (typeof body.username === "string") {
       const { data: profile } = await configured.public.from("marketplace_profiles").select("owner_id").eq("username", text(body.username, 24)).maybeSingle();
       if (!profile) return NextResponse.json({ success: true, data: [] });
@@ -381,10 +381,10 @@ async function publishBundle(request: Request) {
   const name = text(body.name, 120), description = text(body.description, 5000);
   if (name.length < 2 || !Array.isArray(body.items) || body.items.length < 1 || body.items.length > 50) return NextResponse.json({ error: "A bundle needs a name and between 1 and 50 items." }, { status: 400 });
   const isFree = body.is_free !== false;
-  const price = isFree ? 0 : Number(body.price_usd);
-  if (!isFree && (!Number.isFinite(price) || price <= 0)) return NextResponse.json({ error: "Paid bundles need a positive price_usd." }, { status: 400 });
+  const price = isFree ? 0 : Number(body.price_inr);
+  if (!isFree && (!Number.isFinite(price) || price <= 0)) return NextResponse.json({ error: "Paid bundles need a positive price_inr." }, { status: 400 });
   const bundleId = crypto.randomUUID();
-  const { error: bundleError } = await configured.admin.from("marketplace_bundles").insert({ id: bundleId, owner_id: ownerId, name, description, image_url: text(body.image_url, 2000) || null, is_free: isFree, price_usd: price, category: text(body.category, 100) || null, tags: csvTags(body.tags) });
+  const { error: bundleError } = await configured.admin.from("marketplace_bundles").insert({ id: bundleId, owner_id: ownerId, name, description, image_url: text(body.image_url, 2000) || null, is_free: isFree, price_inr: price, category: text(body.category, 100) || null, tags: csvTags(body.tags) });
   if (bundleError) return NextResponse.json({ error: "Could not create bundle." }, { status: 500 });
   const itemIds: string[] = [];
   for (const candidate of body.items) {
@@ -397,7 +397,7 @@ async function publishBundle(request: Request) {
       if (id) itemIds.push(id);
       else if (typeof entry.prompt === "string" && text(entry.prompt, 100000).length >= 5) {
         const inlineId = crypto.randomUUID();
-        const { error } = await configured.admin.from("agents").insert({ id: inlineId, owner_id: ownerId, user_id: ownerId, statusType: "prompt", name: text(entry.name, 120) || `${name} prompt`, description: text(entry.description, 3000), prompt_body: text(entry.prompt, 100000), is_free: isFree, price_usd: isFree ? 0 : price, created_at: new Date().toISOString() });
+        const { error } = await configured.admin.from("agents").insert({ id: inlineId, owner_id: ownerId, user_id: ownerId, statusType: "prompt", name: text(entry.name, 120) || `${name} prompt`, description: text(entry.description, 3000), prompt_body: text(entry.prompt, 100000), is_free: isFree, price_inr: isFree ? 0 : price, created_at: new Date().toISOString() });
         if (error) { await configured.admin.from("marketplace_bundles").delete().eq("id", bundleId); return NextResponse.json({ error: "Could not create an inline prompt in the bundle." }, { status: 500 }); }
         itemIds.push(inlineId);
       }

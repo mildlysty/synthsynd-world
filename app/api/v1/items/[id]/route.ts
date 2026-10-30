@@ -7,7 +7,7 @@ import { hasHolderAccess } from "../../../_lib/holder-access";
 
 function publicFields(row: Record<string, unknown>) {
   const allowed = [
-    "id", "name", "description", "image_url", "price_usd", "user_id", "is_free", "created_at",
+    "id", "name", "description", "image_url", "price_inr", "user_id", "is_free", "created_at",
     "statusType", "category", "tags", "language", "token_address", "token_symbol", "pool_address",
     "fee_selection", "vault_mode", "mcp_server_url", "x402_url", "use_cases", "requirements", "links",
     "demo_task", "demo_steps", "demo_result",
@@ -38,19 +38,19 @@ export async function GET(
   });
   const { data, error } = await supabase
     .from("agents")
-    .select("id,name,description,image_url,price_usd,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,fee_selection,vault_mode,mcp_server_url,x402_url,requirements,use_cases,links,demo_task,demo_steps,demo_result")
+    .select("id,name,description,image_url,price_inr,user_id,owner_id,is_free,created_at,statusType,category,tags,language,token_address,token_symbol,pool_address,fee_selection,vault_mode,mcp_server_url,x402_url,requirements,use_cases,links,demo_task,demo_steps,demo_result")
     .eq("id", id)
     .maybeSingle();
 
   if (error) return NextResponse.json({ error: "Could not load marketplace item." }, { status: 500 });
   if (!data) {
     const { data: bundle, error: bundleError } = await supabase.from("marketplace_bundles")
-      .select("id,name,description,image_url,price_usd,is_free,created_at,owner_id")
+      .select("id,name,description,image_url,price_inr,is_free,created_at,owner_id")
       .eq("id", id).eq("status", "published").maybeSingle();
     await recordApiKeyUsage(_request, "GET", "/api/v1/items/:id", bundleError && !missingBundlesTable(bundleError) ? 500 : bundle ? 200 : 404);
     if (bundleError && !missingBundlesTable(bundleError)) return NextResponse.json({ error: "Could not load marketplace item." }, { status: 500 });
     if (!bundle) return NextResponse.json({ error: "Item not found." }, { status: 404 });
-    return NextResponse.json({ item: { id: bundle.id, name: bundle.name, description: bundle.description, image_url: bundle.image_url, price_usd: bundle.price_usd, is_free: bundle.is_free, created_at: bundle.created_at, user_id: bundle.owner_id, statusType: "bundle" } });
+    return NextResponse.json({ item: { id: bundle.id, name: bundle.name, description: bundle.description, image_url: bundle.image_url, price_inr: bundle.price_inr, currency: "INR", is_free: bundle.is_free, created_at: bundle.created_at, user_id: bundle.owner_id, statusType: "bundle" } });
   }
   const auth = await getAuthenticatedSupabase(_request);
   const owner = Boolean(auth && data.owner_id === auth.user.id);
