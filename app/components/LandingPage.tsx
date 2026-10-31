@@ -134,6 +134,13 @@ export default function LandingPage() {
 
   return (
     <div className="landing-page">
+      <aside className="official-domain-notice" aria-label="Official website announcement">
+        <span className="official-domain-indicator" aria-hidden="true" />
+        <span>Official Synthsynd World website:</span>
+        <a href="https://synthsyndworld.fun" target="_blank" rel="noopener noreferrer">
+          synthsyndworld.fun <span aria-hidden="true">↗</span>
+        </a>
+      </aside>
       <header className="landing-header">
         <div className="landing-header-inner">
           <Link href="/" className="landing-brand" aria-label="Synthsynd World home">

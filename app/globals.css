@@ -60,6 +60,11 @@ html { scroll-behavior: smooth; }
     radial-gradient(ellipse at 53% 50%, rgba(30, 43, 74, .22), transparent 39%),
     var(--landing-bg);
 }
+.official-domain-notice { min-height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 7px 14px; border-bottom: 1px solid rgba(108, 225, 221, .16); background: linear-gradient(90deg, rgba(15, 30, 37, .96), rgba(20, 17, 34, .96)); color: #b9c5d6; font-size: 12px; text-align: center; }
+.official-domain-indicator { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #69e7dd; box-shadow: 0 0 12px rgba(105, 231, 221, .65); }
+.official-domain-notice a { color: #e4dcff; font-weight: 750; text-decoration: underline; text-decoration-color: rgba(180, 151, 255, .6); text-underline-offset: 3px; }
+.official-domain-notice a:hover { color: #fff; }
+.official-domain-notice a:focus-visible { outline: 2px solid #69e7dd; outline-offset: 3px; border-radius: 2px; }
 .landing-header { position: sticky; top: 0; z-index: 20; height: 76px; flex: 0 0 76px; border-bottom: 1px solid var(--landing-line); background: rgba(7, 9, 13, .82); backdrop-filter: blur(18px); }
 .landing-header-inner { width: min(1440px, 100%); height: 100%; margin: 0 auto; padding: 0 clamp(18px, 4vw, 64px); display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .landing-brand { display: inline-flex; flex: 0 0 auto; align-items: center; white-space: nowrap; }
