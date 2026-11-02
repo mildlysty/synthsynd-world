@@ -8,12 +8,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === '/' || pathname === '/manifesto';
 
   return (
-    <div className="flex min-h-screen">
+    <div className="app-shell flex min-h-screen flex-col lg:flex-row">
       {!isLandingPage && <Sidebar />}
       {isLandingPage ? (
         <div className="min-w-0 flex-1">{children}</div>
       ) : (
-        <main className="ml-0 min-w-0 flex-1 lg:ml-64">{children}</main>
+        <div className="app-content ml-0 min-w-0 flex-1 lg:ml-64">{children}</div>
       )}
     </div>
   );

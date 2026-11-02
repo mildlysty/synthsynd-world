@@ -44,7 +44,7 @@ export default async function Agent({ params }: { params: Promise<{ id: string }
         </>}
       </div>
       <div className="w-full lg:w-96">
-        <div className="sticky top-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
+        <div className="agent-purchase-panel sticky top-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
           <div className="mb-4 h-52 overflow-hidden rounded-xl bg-zinc-900">
             {agent.image_url && <img src={agent.image_url} alt="" className="h-full w-full object-cover" />}
           </div>

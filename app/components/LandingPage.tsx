@@ -150,6 +150,7 @@ export default function LandingPage() {
             <a href="#marketplace">Marketplace</a>
             <a href="#build">Build</a>
             <a href="#agents">Agents</a>
+            <Link href="/workflows">Workflows</Link>
             <Link href="/trust">Trust</Link>
             <Link href="/developers">Docs</Link>
           </nav>
